@@ -389,7 +389,14 @@ void GamepadUIButton::FireActionSignal()
 {
     BaseClass::FireActionSignal();
 
+// ------------------------------------------------------------------
+// We can't use the PostMessageToAllSiblingsOfType function on Linux.
+// ------------------------------------------------------------------
+#ifdef WIN32
     PostMessageToAllSiblingsOfType< GamepadUIButton >( new KeyValues( "OnSiblingGamepadUIButtonOpened" ) );
+#else
+	PostMessageToAllSiblings( new KeyValues( "OnSiblingGamepadUIButtonOpened" ) );
+#endif
 }
 
 void GamepadUIButton::OnSiblingGamepadUIButtonOpened()

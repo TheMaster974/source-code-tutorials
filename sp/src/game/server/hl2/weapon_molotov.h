@@ -52,7 +52,7 @@ public:
 //	bool				ObjectInWay( void );
 
 //	void				ThrowMolotov( const Vector &vecSrc, const Vector &vecVelocity);
-	void				ThrowMolotov(CBasePlayer* pPlayer); // Modified inputs.
+	void				ThrowMolotov(CBaseCombatCharacter *pThrower); // Modified inputs.
 
 	void				ItemPostFrame( void );
 	void				PrimaryAttack( void );
@@ -67,6 +67,9 @@ public:
 	bool Reload(void);
 	bool Holster(CBaseCombatWeapon* pSwitchingTo = NULL);
 	bool Deploy(void);
+	void Drop(const Vector& velocity);
+	void DecrementAmmo(CBaseCombatCharacter* pOwner);
+	void Event_Killed(const CTakeDamageInfo& info);
 
 	DECLARE_ACTTABLE();
 	DECLARE_DATADESC();

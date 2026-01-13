@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Adds an animated background menu.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #ifndef TEAMFORTRESSVIEWPORT_H
@@ -66,7 +66,15 @@ public:
 #endif
 	}
 
-	virtual int GetDeathMessageStartHeight( void );	
+	virtual int GetDeathMessageStartHeight( void );
+
+// ----------
+// Additions.
+// ----------
+	void StartMainMenuVideo();
+	void StopMainMenuVideo();
+	void DeleteBIKMenu();
+	void InitializeBIKMenu(bool bPlay = true);
 
 	// virtual void ChatInputPosition( int *x, int *y );
 	
@@ -142,6 +150,12 @@ protected:
 	vgui::HCursor		m_hCursorNone;
 	vgui::AnimationController *m_pAnimController;
 	int					m_OldSize[2];
+
+// ---------
+// Addition.
+// ---------
+private:
+	class ModBase_BikMenu* m_pMainMenuPanel;
 };
 
 

@@ -2,13 +2,9 @@
 //
 // Purpose: Adds Gamepad UI feature courtesy of Joshua Ashton and DasMaddi!
 // 
-//			Please note, the GameUI code is inaccessible, so there will be
-//			issues with this feature i.e. the main menu title gets drawn twice.
-//			There is a workaround, where you use an image instead of text.
-//			In this case, the game must always use the Gamepad UI. Additionally,
-//			you must go to the gamepadui/schememainmenu.res file and add:
-//			"Logo.Image" "gamepadui/<logo name>" where <logo name> is the name
-//			of the material that contains your mod's logo. The logo must
+//			If you want to use a logo, you must go to the gamepadui/schememainmenu.res
+//			file and add: "Logo.Image" "gamepadui/<logo name>" where <logo name> is
+//			the name of the material that contains your mod's logo. The logo must
 //			adhere to a specific format (which I cover in my video) and must
 //			be 1024x512 in size. The .vtf file must have the flags (in VTFEdit)
 //			SRGB, No Mipmap and No Level Of Detail selected. This .vtf file
@@ -185,6 +181,8 @@ extern vgui::IInputInternal *g_InputInternal;
 #if defined( GAMEPADUI )
 #include "../gamepadui/igamepadui.h"
 #endif // GAMEPADUI
+
+#include "tutorials/BikBackground.h" // Addition.
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -365,8 +363,30 @@ class IClientPurchaseInterfaceV2 *g_pClientPurchaseInterface = (class IClientPur
 static ConVar *g_pcv_ThreadMode = NULL;
 
 // GAMEPADUI TODO - put this somewhere better. (Madi)
-// Note: To avoid the main menu title drawing twice, this function must always return true!
 #if defined( GAMEPADUI )
+// This function hides the main menu logo when the Gamepad UI is used.
+void HideMainMenuLogoRecursive(vgui::VPANEL rootpanel)
+{
+	// Get the child count for the VPANEL and go through each child.
+	for (int i = 0; i < vgui::ipanel()->GetChildCount(rootpanel); i++)
+	{
+		int child = vgui::ipanel()->GetChild(rootpanel, i);
+		const char* panelname = vgui::ipanel()->GetName(child);
+
+		// If the name is GameMenuButton or GameMenuButton2, remove them. These are the names of the text logos.
+		if (!Q_strcmp(panelname, "GameMenuButton") || !Q_strcmp(panelname, "GameMenuButton2"))
+		{
+			// Get the panel.
+			vgui::Panel* logo = vgui::ipanel()->GetPanel(child, "GameUI");
+
+			// Make the logo hidden.
+			if (logo)
+				logo->SetVisible(false);
+		}
+
+		HideMainMenuLogoRecursive(child);
+	}
+}
 const bool IsSteamDeck()
 {
 	if (CommandLine()->FindParm("-gamepadui"))
@@ -885,6 +905,194 @@ CHLClient::CHLClient()
 
 extern IGameSystem *ViewportClientSystem();
 
+// ----------------------------------------------------
+// Additions, this is for the animated background menu.
+// Please check the scripts/background_menu.txt and
+// scripts/background_menu_criteria.txt files for more
+// information about how to use this feature.
+// ----------------------------------------------------
+//--------------------------------------------------------------------------
+// Purpose: Initialize all the background holders and check to see if we are
+//			using a bik background instead of the base background
+//--------------------------------------------------------------------------
+void ModBase_InitBackground()
+{
+	KeyValues* _BackgroundConfig = new KeyValues("_BackgroundConfig");
+
+	// Try to open scripts/background_menu.txt
+	if (!_BackgroundConfig->LoadFromFile(g_pFullFileSystem, "scripts/background_menu.txt", "MOD"))
+	{
+		BikBackgroundDebugMsg("Background BIK Video: Failed to load 'scripts/background_menu.txt!'\n");
+		_BackgroundConfig->deleteThis();
+		return;
+	}
+
+	// Should this mod use bik backgrounds or not?
+	g_PModBase_BikBackground_bUse = _BackgroundConfig->GetBool("UseVideoBackground", false);
+
+	// The ConVar to check for the backgrounds
+	g_PModBase_BikBackground_szConvarName = _strdup(_BackgroundConfig->GetString("BackgroundConvar", "sv_unlockedchapters"));
+
+	// Get the load type
+	const char* LoadType = _BackgroundConfig->GetString("BackgroundLoadType", "UseConVar");
+	if (!Q_stricmp(LoadType, "random"))
+		g_PModBase_BikBackground_LoadType = ModBase_BikBackgroundLoadType::Random;
+	else if (!Q_stricmp(LoadType, "fullyrandom"))
+		g_PModBase_BikBackground_LoadType = ModBase_BikBackgroundLoadType::FullyRandom;
+	else if (!Q_stricmp(LoadType, "comparepreviousmap"))
+		g_PModBase_BikBackground_LoadType = ModBase_BikBackgroundLoadType::ComparePreviousMap;
+	else
+		g_PModBase_BikBackground_LoadType = ModBase_BikBackgroundLoadType::UseConvar;
+
+	// Check to see if the ConVar is valid. If not, use the default convar
+	if (!ConVarRef(g_PModBase_BikBackground_szConvarName).IsValid() || g_PModBase_BikBackground_LoadType != ModBase_BikBackgroundLoadType::UseConvar)
+	{
+		// Only show this to ConVar background mode
+		if (g_PModBase_BikBackground_LoadType == ModBase_BikBackgroundLoadType::UseConvar)
+			BikBackgroundDebugMsg("Background BIK Video: Failed to find ConVar '%s'! using sv_unlockedchapters ConVar instead!\n", g_PModBase_BikBackground_szConvarName);
+
+		// Set ConVar to sv_unlockedchapters
+		free((char*)g_PModBase_BikBackground_szConvarName);
+		g_PModBase_BikBackground_szConvarName = _strdup("sv_unlockedchapters");
+	}
+
+	// Now create the actual data for the bik backgrounds
+	FOR_EACH_TRUE_SUBKEY(_BackgroundConfig, data)
+	{
+		// Make a new data holder
+		PModBase_BikBackgroundHolder* holder = new PModBase_BikBackgroundHolder;
+
+		// Get the background name and min value
+		holder->bik_video_name = _strdup(data->GetString("BackgroundVideoName"));
+
+		// The min value isn't used for ComparePreviousMap. For that it uses 'IsDefault'
+		if (g_PModBase_BikBackground_LoadType == ModBase_BikBackgroundLoadType::ComparePreviousMap)
+			holder->minvalue = (int)data->GetBool("IsDefault", false);
+		else
+			holder->minvalue = data->GetInt("MinValue", 0);
+
+		// Set the criteria the previous map name must have for it to play the background if the current load type is one of the ComparePreviousMap load types
+		if (g_PModBase_BikBackground_LoadType == ModBase_BikBackgroundLoadType::ComparePreviousMap)
+		{
+			const char* criteria = data->GetString("MapCriteria", "");
+			holder->MapCriteria = criteria ? strdup(criteria) : "";
+			holder->IsDefaultIfPrevMapIsEmpty = data->GetBool("DefaultIfPreviousMapEmpty", false);
+		}
+
+		// Get the music
+		KeyValues* songs = data->FindKey("music");
+		if (songs)
+		{
+			FOR_EACH_VALUE(songs, music)
+			{
+				// Get the background song info
+				BikBackground_SongInfo_t* songinfo = new BikBackground_SongInfo_t;
+				songinfo->songname = strdup(music->GetName());
+				songinfo->songvolume = music->GetFloat();
+				holder->Songs.AddToTail(songinfo);
+			}
+		}
+
+		// Add the holder to the array of holders
+		g_PModBase_BikBackground_Holders.AddToTail(holder);
+	}
+
+	// Should this mod use an image for the logo or not?
+	g_PModBase_BikBackground_bUseTextureLogo = _BackgroundConfig->GetBool("UseImageLogo", false);
+	g_PModBase_BikBackground_bUseTextureLogoName = _BackgroundConfig->GetString("ImageLogoName", nullptr);
+	g_PModBase_BikBackground_bUseTextureLogoColor = _strdup(_BackgroundConfig->GetString("ImageLogoColor", "255 255 255 255"));
+
+	// Alloc memory for the string
+	g_PModBase_BikBackground_bUseTextureLogoName = g_PModBase_BikBackground_bUseTextureLogoName ? _strdup(g_PModBase_BikBackground_bUseTextureLogoName) : nullptr;
+
+	// Get the logo position offset
+	g_PModBase_BikBackground_bUseTextureLogoPosX = _BackgroundConfig->GetInt("ImageLogoX", 0);
+	g_PModBase_BikBackground_bUseTextureLogoPosY = _BackgroundConfig->GetInt("ImageLogoY", 0);
+	g_PModBase_BikBackground_bUseTextureLogoWide = _BackgroundConfig->GetInt("ImageLogoWide", 0);
+	g_PModBase_BikBackground_bUseTextureLogoTall = _BackgroundConfig->GetInt("ImageLogoTall", 0);
+
+	// Check if the texture name isn't nullptr. If it is, then make the mod not use the texture logo
+	if (g_PModBase_BikBackground_bUseTextureLogo && !g_PModBase_BikBackground_bUseTextureLogoName)
+	{
+		BikBackgroundDebugMsg("Background BIK Video: Failed to get texture for the background video logo. Resorting to using the default logo text!\n");
+		g_PModBase_BikBackground_bUseTextureLogo = false;
+	}
+
+	BikBackgroundDebugMsg("Background BIK Video: Initalized Background Data!\n");
+
+	_BackgroundConfig->deleteThis();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Deletes and resets all the stuff initalized from ModBase_InitBackground
+//-----------------------------------------------------------------------------
+void ModBase_DeleteBackground()
+{
+	g_PModBase_BikBackground_bUse = false;
+	g_PModBase_BikBackground_bUseTextureLogo = false;
+
+	// Delete the texture logo name if there is one
+	if (g_PModBase_BikBackground_bUseTextureLogoName)
+		free((char*)g_PModBase_BikBackground_bUseTextureLogoName);
+
+	// Set the texture logo to nullptr
+	g_PModBase_BikBackground_bUseTextureLogoName = nullptr;
+
+	// Delete the texture logo color if there is one
+	if (g_PModBase_BikBackground_bUseTextureLogoColor)
+		free((char*)g_PModBase_BikBackground_bUseTextureLogoColor);
+
+	// Set the texture logo color to nullptr
+	g_PModBase_BikBackground_bUseTextureLogoColor = nullptr;
+
+	// Delete the ConVar name
+	if (g_PModBase_BikBackground_szConvarName)
+		free((char*)g_PModBase_BikBackground_szConvarName);
+
+	// Set the ConVar name to nullptr
+	g_PModBase_BikBackground_szConvarName = nullptr;
+
+	// Reset the load type
+	g_PModBase_BikBackground_LoadType = ModBase_BikBackgroundLoadType::UseConvar;
+
+	// Reset these
+	g_PModBase_BikBackground_bUseTextureLogoPosX = 0;
+	g_PModBase_BikBackground_bUseTextureLogoPosY = 0;
+	g_PModBase_BikBackground_bUseTextureLogoWide = 0;
+	g_PModBase_BikBackground_bUseTextureLogoTall = 0;
+
+	// Now delete all the items
+	for (int i = 0; i < g_PModBase_BikBackground_Holders.Size(); i++)
+	{
+		PModBase_BikBackgroundHolder* holder = g_PModBase_BikBackground_Holders[i];
+		if (!holder)
+			continue;
+
+		if (holder->bik_video_name)
+			free((char*)holder->bik_video_name);
+
+		// Delete all the songs
+		for (int j = 0; j < holder->Songs.Count(); j++)
+		{
+			// Check for song
+			if (holder->Songs[j]->songname)
+				free((char*)holder->Songs[j]->songname);
+
+			// Delete the song info
+			delete[] holder->Songs[j];
+		}
+
+		g_PModBase_BikBackground_Holders[i] = nullptr;
+
+		delete holder;
+	}
+
+	// Reset the array
+	g_PModBase_BikBackground_Holders.RemoveAll();
+
+	BikBackgroundDebugMsg("Background BIK Video: Deleted Bik Background Data!\n");
+}
+
 
 //-----------------------------------------------------------------------------
 ISourceVirtualReality *g_pSourceVR = NULL;
@@ -1066,6 +1274,7 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	IGameSystem::Add( GetPredictionCopyTester() );
 #endif
 
+	ModBase_InitBackground(); // Addition.
 	modemanager->Init( );
 
 	g_pClientMode->InitViewport();
@@ -1163,6 +1372,8 @@ bool CHLClient::ReplayPostInit()
 #endif
 }
 
+void SwapDisconnectCommand(); // Addition.
+
 //-----------------------------------------------------------------------------
 // Purpose: Called after client & server DLL are loaded and all systems initialized
 //-----------------------------------------------------------------------------
@@ -1193,6 +1404,21 @@ void CHLClient::PostInit()
 	}
 #endif
 
+// ----------
+// Additions.
+// ----------
+	if (g_PModBase_BikBackground_bUse
+#ifdef GAMEPADUI
+		&& !g_PModBase_BIsGamepadUI
+#endif
+		)
+	{
+		SwapDisconnectCommand();
+
+		if (CommandLine()->CheckParm("+map") == NULL)
+			engine->ClientCmd("disconnect");
+	}
+
 #if defined(GAMEPADUI)
 	if (IsSteamDeck())
 	{
@@ -1212,6 +1438,11 @@ void CHLClient::PostInit()
 					factorylist_t factories;
 					FactoryList_Retrieve(factories);
 					g_pGamepadUI->Initialize(factories.appSystemFactory);
+// ---------------------------------------------------------------------
+// Additions for the animated background menu, disables the GameUI logo.
+// ---------------------------------------------------------------------
+					HideMainMenuLogoRecursive(enginevgui->GetPanel(VGuiPanel_t::PANEL_GAMEUIDLL));
+					g_PModBase_BIsGamepadUI = true;
 				}
 				else
 				{
@@ -1269,6 +1500,7 @@ void CHLClient::Shutdown( void )
 	UncacheAllMaterials();
 
 	IGameSystem::ShutdownAllSystems();
+	ModBase_DeleteBackground(); // Addition.
 
 #if defined( GAMEPADUI )
 	if (g_pGamepadUI != nullptr)
@@ -1379,6 +1611,40 @@ void CHLClient::HudUpdate( bool bActive )
 #if defined( GAMEPADUI )
 	if (g_pGamepadUI != nullptr)
 		g_pGamepadUI->OnUpdate( frametime );
+
+// ---------------------------------------------------------------------------
+// Additions for the animated background menu. Here's what WadDelZ has to say!
+// ---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
+// Alright, so when the Gamepad UI is active and we are running 'debug' mode, then it won't actually
+// show the bik background if activated. Do this hack to make it show! The reason the hack works is because
+// after the 3rd time this function gets called the engine->IsConnected() function is set. This can be used
+// to see if we are loading into a level or if we aren't loading into a level (are disconnected). If the Gamepad UI
+// is active and we aren't loading into a background then usually the background bik video won't play.
+// This is because for the Gamepad UI, the bik loading functionality is in the LevelInitPostEntity() function
+// and that doesn't get called if we aren't connected/loading into a server.
+// ----------------------------------------------------------------------------------------------------------------
+	if (g_PModBase_BIsGamepadUI)
+	{
+		static int iTimes = 0;
+		if (iTimes < 2)
+		{
+			iTimes++;
+		}
+		else if (iTimes == 2)
+		{
+			if (!engine->IsConnected() && CommandLine()->CheckParm("+map") == nullptr && g_PModBase_BikBackground_bUse)
+			{
+				// Swap the disconnect commands.
+				SwapDisconnectCommand();
+
+				// Show the bik background.
+				engine->ClientCmd("disconnect");
+			}
+
+			iTimes++;
+		}
+	}
 #endif // GAMEPADUI
 }
 
@@ -1746,6 +2012,29 @@ void CHLClient::LevelInitPostEntity( )
 #if defined( GAMEPADUI )
 	if (g_pGamepadUI != nullptr)
 		g_pGamepadUI->OnLevelInitializePostEntity();
+
+// ---------------------------------------------------------------------------
+// Additions for the animated background menu. Here's what WadDelZ has to say!
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Called on startup for the Gamepad UI. The reason I do this is because
+// when loading into a background map, this gets called on PostInit() for
+// Portal 1 (or any Source engine game that has the spinning loading disc
+// in the top right corner) then it will cause the game to go into an
+// infinite loop. The only way to fix it is by doing this because the
+// spinning wheel functionality is in the GameUI DLL (which is inaccessible!).
+// ---------------------------------------------------------------------------
+	static bool bDid = false;
+	if (!bDid && g_PModBase_BIsGamepadUI && g_PModBase_BikBackground_bUse)
+	{
+		SwapDisconnectCommand();
+
+		// If the +map parameter is in use, don't bother disconnecting.
+		if (CommandLine()->CheckParm("+map") == nullptr && engine->IsLevelMainMenuBackground())
+			engine->ClientCmd("disconnect");
+	}
+
+	bDid = true;
 #endif // GAMEPADUI
 }
 

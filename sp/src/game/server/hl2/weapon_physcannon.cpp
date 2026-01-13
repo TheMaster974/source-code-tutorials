@@ -1054,6 +1054,7 @@ void CPlayerPickupController::Init( CBasePlayer *pPlayer, CBaseEntity *pObject )
 	
 	m_pPlayer->m_Local.m_iHideHUD |= HIDEHUD_WEAPONSELECTION;
 	m_pPlayer->SetUseEntity( this );
+	m_pPlayer->m_flNextAttack = FLT_MAX; // Addition to prevent the player from attacking when holding on to something.
 }
 
 
@@ -1232,6 +1233,7 @@ public:
 	void	ItemPreFrame();
 	void	ItemPostFrame();
 	void	ItemBusyFrame();
+	bool	ReloadOrSwitchWeapons(); // Addition.
 
 	virtual float GetMaxAutoAimDeflection() { return 0.90f; }
 
@@ -1703,6 +1705,15 @@ bool CWeaponPhysCannon::Holster( CBaseCombatWeapon *pSwitchingTo )
 	ForceDrop();
 
 	return BaseClass::Holster( pSwitchingTo );
+}
+
+// ----------------------------------------------------------------------------------
+// Addition, this stops the Gravity Gun's effects from being active on other weapons.
+// ----------------------------------------------------------------------------------
+bool CWeaponPhysCannon::ReloadOrSwitchWeapons(void)
+{
+	ForceDrop();
+	return BaseClass::ReloadOrSwitchWeapons();
 }
 
 //-----------------------------------------------------------------------------

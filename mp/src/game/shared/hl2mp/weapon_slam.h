@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose:		SLAM 
+// Purpose:		SLAM. Removed SatchelAttach stuff.
 //
 // $Workfile:     $
 // $Date:         $
@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 // $Log: $
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #ifndef	WEAPONSLAM_H
@@ -21,7 +21,6 @@ enum
 {
 	SLAM_TRIPMINE_READY,
 	SLAM_SATCHEL_THROW,
-	SLAM_SATCHEL_ATTACH,
 };
 
 #ifdef CLIENT_DLL
@@ -43,7 +42,6 @@ public:
 	CNetworkVar( bool,				m_bNeedReload);
 	CNetworkVar( bool,				m_bClearReload);
 	CNetworkVar( bool,				m_bThrowSatchel);
-	CNetworkVar( bool,				m_bAttachSatchel);
 	CNetworkVar( bool,				m_bAttachTripmine);
 	float				m_flWallSwitchTime;
 
@@ -69,12 +67,17 @@ public:
 	void				StartSatchelDetonate( void );
 	void				SatchelDetonate( void );
 	void				StartSatchelThrow( void );
-	void				StartSatchelAttach( void );
 	void				SatchelThrow( void );
-	void				SatchelAttach( void );
 	bool				Deploy( void );
 	bool				Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
 
+// ----------
+// Additions.
+// ----------
+	bool				HasAnyAmmo(void);
+	void				DecrementAmmo(CBaseCombatCharacter* pOwner);
+	void				Drop(const Vector& velocity);
+	void				Event_Killed(const CTakeDamageInfo& info);
 
 	CWeapon_SLAM();
 

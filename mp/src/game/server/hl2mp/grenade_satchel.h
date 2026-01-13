@@ -4,7 +4,7 @@
 //
 // $Workfile:     $
 // $Date:         $
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #ifndef	SATCHEL_H
@@ -33,6 +33,14 @@ public:
 	
 	// Input handlers
 	void			InputExplode( inputdata_t &inputdata );
+
+// ----------
+// Additions.
+// ----------
+	int OnTakeDamage(const CTakeDamageInfo& inputInfo);
+	void Event_Killed(const CTakeDamageInfo& info);
+	void DeathThink(void);
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value);
 
 	float			m_flNextBounceSoundTime;
 	bool			m_bInAir;

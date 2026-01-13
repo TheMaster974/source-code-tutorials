@@ -1,24 +1,22 @@
----------------------------------------------------------------------------
-If you use any of these modified files, please give credit to TheMaster974!
----------------------------------------------------------------------------
+# If you use any of these modified files, please give credit to TheMaster974!
 
-A fork of the 2013 SDK, with additions/modifications from my YouTube videos linked below. This (currently) covers all Singleplayer changes from tutorials 0.5 to 31 (excluding 6/7/8/15/24 i.e. shader stuff) and Source Shorts 1 to 18 (excluding 2/7/8/10/15/17 i.e. Multiplayer stuff, using leaked engine code and Fake CSM from celisej567). Multiplayer changes will come eventually. Let me know if there are any issues!
+A fork of the 2013 SDK, with additions/modifications from my YouTube videos linked below. This (currently) covers all Singleplayer and Multiplayer changes from tutorials 0.5 to 35 (excluding 6 and 8 i.e. the Source Shader Editor and shader setup stuff) and Source Shorts 1 to 30 (excluding 7/8/15/17 i.e. Mapbase issues, using leaked engine code and Fake CSM from celisej567). Let me know if there are any issues!
 
 Valve Source Code Tutorials can be found here → https://www.youtube.com/playlist?list=PL8tDEPB6h7Lk0YtRtt4k1h_Thgj1ZA2dX
 
 Source Shorts can be found here → https://www.youtube.com/playlist?list=PL8tDEPB6h7LnslIGAYRsmS-wS5MeorktV
 
-Includes Dynamic RTT Shadows feature from Saul Rennison and Gamepad UI feature from Joshua Ashton / DasMaddi, with some assistance from WadDelZ!
+Source Shader Editor fork → https://github.com/TheMaster974/source-shader-editor
 
-------------
-Linux Issues
-------------
+Includes Dynamic RTT Shadows feature from Saul Rennison, Gamepad UI feature from Joshua Ashton / DasMaddi, Animated Background Menu feature from Jorge "BSVino" Rodriguez and Custom Loading Screen feature from Cvoxalury / sylveonsylvia / Maestra Fénix, with some assistance from WadDelZ!
 
-The Gamepad UI doesn't work on Linux, the PostMessageToAllSiblingsOfType function in Panel.h causes errors regarding an incomplete use of the KeyValues class, plus the rest of the Gamepad UI code has issues. As a result, I have disabled the Gamepad UI code from being compiled on Linux until a fix can be implemented. I have also performed a few minor changes to some of the files that caused issues on Linux but not on Windows i.e. (client/server)_(hl2/episodic).vpc files.
+# Linux Issues
 
-------------------------------
-Source SDK License Information
-------------------------------
+At the time of updating this readme, Source SDK Base 2013 Singleplayer does NOT work on Linux! I will try to make Valve aware of this issue, for now there is a hacky fix which can be found here: https://github.com/ValveSoftware/portal2/issues/451#issuecomment-2632833249
+
+Also, the Gamepad UI code *can* be compiled on Linux, but only via the 'docker'/'container' method. If you want to enable this, go to the sp/src/vpc_scripts/projects.vgc file and remove the 'WIN32 &&' parts to enable the projects on Linux. I have also performed a few minor changes to some of the files that caused issues on Linux but not on Windows i.e. (client/server)_(hl2/episodic).vpc files.
+
+# Source SDK License Information
 
 SOURCE 1 SDK LICENSE
 

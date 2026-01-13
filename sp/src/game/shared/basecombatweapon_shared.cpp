@@ -43,6 +43,8 @@
 // ---------
 #ifdef CLIENT_DLL
 #include "c_baseplayer.h"
+#else
+#include "hl2_player.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -832,12 +834,21 @@ void CBaseCombatWeapon::Drop( const Vector &vecVelocity )
 	}
 #endif
 
-	DisableIronsights(); // Addition.
+// ----------
+// Additions.
+// ----------
+	DisableIronsights();
+	m_bInReload = false;
 }
 
 // ---------------------------------
 // Additions for ironsights feature.
 // ---------------------------------
+bool CBaseCombatWeapon::CanUseIronsights(void) const
+{
+	return GetWpnData().bCanUseIronsight;
+}
+
 Vector CBaseCombatWeapon::GetIronsightPositionOffset(void) const
 {
 	if (viewmodel_adjust_enabled.GetBool())
@@ -901,6 +912,8 @@ bool CBaseCombatWeapon::IsIronsighted(void)
 
 void CBaseCombatWeapon::ToggleIronsights(void)
 {
+	if (!CanUseIronsights() || gpGlobals->curtime < m_flIronsightedTime + 1.5f)
+		return;
 // --------------------------------------
 // Exit out of ironsights when reloading.
 // --------------------------------------
@@ -925,7 +938,7 @@ void CBaseCombatWeapon::EnableIronsights(void)
 		return;
 #endif
 */
-	if (!HasIronsights() || m_bIsIronsighted)
+	if (!CanUseIronsights() || m_bIsIronsighted)
 		return;
 
 	CBasePlayer* pOwner = ToBasePlayer(GetOwner());
@@ -945,6 +958,16 @@ void CBaseCombatWeapon::EnableIronsights(void)
 		m_bIsIronsighted = true;
 		SetIronsightTime();
 	}
+
+#ifndef CLIENT_DLL
+	ConVarRef ironsightedSpeed("hl2_walkspeed");
+	pOwner->SetMaxSpeed(ironsightedSpeed.GetFloat());
+	CHL2_Player* pPlayer = (CHL2_Player*)ToBasePlayer(pOwner);
+	if (pPlayer)
+	{
+		pPlayer->EnableSprint(false);
+	}
+#endif
 }
 
 void CBaseCombatWeapon::DisableIronsights(void)
@@ -955,7 +978,7 @@ void CBaseCombatWeapon::DisableIronsights(void)
 		return;
 #endif
 */
-	if (!HasIronsights() || !m_bIsIronsighted)
+	if (!CanUseIronsights() || !m_bIsIronsighted)
 		return;
 
 	CBasePlayer* pOwner = ToBasePlayer(GetOwner());
@@ -975,6 +998,17 @@ void CBaseCombatWeapon::DisableIronsights(void)
 		m_bIsIronsighted = false;
 		SetIronsightTime();
 	}
+
+#ifndef CLIENT_DLL
+	ConVarRef walkSpeed("hl2_walkspeed");
+	ConVarRef normSpeed("hl2_normspeed");
+	pOwner->SetMaxSpeed(pOwner->IsSuitEquipped() ? normSpeed.GetFloat() : walkSpeed.GetFloat());
+	CHL2_Player* pPlayer = (CHL2_Player*)ToBasePlayer(pOwner);
+	if (pPlayer)
+	{
+		pPlayer->EnableSprint(true);
+	}
+#endif
 }
 
 void CBaseCombatWeapon::SetIronsightTime(void)
@@ -982,10 +1016,29 @@ void CBaseCombatWeapon::SetIronsightTime(void)
 	m_flIronsightedTime = gpGlobals->curtime;
 }
 
+
+#ifndef CLIENT_DLL
+// ------------------------------
+// Restore the ironsighted state.
+// ------------------------------
+void CBaseCombatWeapon::OnRestore(void)
+{
+	BaseClass::OnRestore();
+
+	if (m_bIsIronsighted)
+	{
+		m_bIsIronsighted = false; // Addition for level transitions, reset ironsights.
+		EnableIronsights();
+	}
+	else
+	{
+		DisableIronsights();
+	}
+}
 // ----------------------------------------------------------------------------------
 // ConCommand that checks to see if ironsights are valid, then enables/disables them.
 // ----------------------------------------------------------------------------------
-#ifdef CLIENT_DLL
+#else
 void CC_ToggleIronSights(void)
 {
 	CBasePlayer* pPlayer = C_BasePlayer::GetLocalPlayer();
@@ -995,9 +1048,10 @@ void CC_ToggleIronSights(void)
 // -------------------------------------------------------
 // We can check if the weapon should have ironsights here.
 // -------------------------------------------------------
-	if (pPlayer->GetActiveWeapon() && (FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_357")
-		|| FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_shotgun")
-		|| FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_smg1")))
+	if (pPlayer->GetActiveWeapon() && (!FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_357")
+		&& !FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_pistol") ) )
+//		|| FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_shotgun")
+//		|| FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_smg1")))
 	{
 		pPlayer->GetActiveWeapon()->ToggleIronsights();
 		engine->ServerCmd("toggle_ironsight"); // Forward to server.
@@ -1704,9 +1758,14 @@ bool CBaseCombatWeapon::DefaultDeploy(char* szViewModel, char* szWeaponModel, in
 			flSequenceDuration = pActive->SequenceDuration();
 		}
 	}
-	bool showWeapon = g_ShowWeapon.SetShowWeapon(this, iActivity, flSequenceDuration);
+// -----------------------------------------------------------------
+// This section has been modified to stop glitchy reload animations.
+// -----------------------------------------------------------------
+	g_ShowWeapon.SetShowWeapon(this, iActivity, flSequenceDuration);
+//	bool showWeapon = g_ShowWeapon.SetShowWeapon(this, iActivity, flSequenceDuration);
 
-	if (!showWeapon)
+//	if (!showWeapon)
+	if (FClassnameIs(this, "weapon_physcannon")) // This stops the Gravity Gun's effects from being active when impulse 101 is used.
 		ReloadOrSwitchWeapons();
 
 #ifndef CLIENT_DLL
@@ -1769,12 +1828,16 @@ bool CBaseCombatWeapon::Holster( CBaseCombatWeapon *pSwitchingTo )
 	{
 		SetWeaponVisible( false );
 	}
+// --------------------------------------------------------------------------------------------
+// Commented out, this stops viewmodels from disappearing when grabbing/dropping physics props.
+// --------------------------------------------------------------------------------------------
+	/*
 	else
 	{
 		// Hide the weapon when the holster animation's finished
 		SetContextThink( &CBaseCombatWeapon::HideThink, gpGlobals->curtime + flSequenceDuration, HIDEWEAPON_THINK_CONTEXT );
 	}
-
+	*/
 	// if we were displaying a hud hint, squelch it.
 	if (m_flHudHintMinDisplayTime && gpGlobals->curtime < m_flHudHintMinDisplayTime)
 	{

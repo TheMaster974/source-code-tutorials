@@ -33,10 +33,15 @@ ConVar phys_gunforce("phys_gunforce", "5e5" );
 ConVar phys_guntorque("phys_guntorque", "100" );
 ConVar phys_gunglueradius("phys_gunglueradius", "128" );
 
+// -------------------------------------------------------------------------------
+// Addition, this is needed to keep track of the number of active Physgun pellets.
+// -------------------------------------------------------------------------------
+ConVar physgun_pellets_in_play("physgun_pellets_in_play", "0", FCVAR_HIDDEN, "Internal variable to keep track of active Physgun pellets.");
+
 static int g_physgunBeam;
 #define PHYSGUN_BEAM_SPRITE		"sprites/physbeam.vmt"
 
-#define MAX_PELLETS	16
+// #define MAX_PELLETS	16 // Removed since this has been moved to the sk_max_gravity ConVar.
 
 class CWeaponGravityGun;
 
@@ -46,6 +51,7 @@ class CGravityPellet : public CBaseAnimating
 public:
 	DECLARE_DATADESC();
 
+	CGravityPellet(); // Addition.
 	~CGravityPellet();
 	void Precache()
 	{
@@ -62,36 +68,24 @@ public:
 		AddEffects( EF_NOSHADOW );
 		SetRenderColor( 255, 0, 0 );
 		m_isInert = false;
+		ObtainParent(); // Addition.
+	}
+
+// --------------------------------------------------------------
+// Addition, this gets the entity that the pellet is attached to.
+// --------------------------------------------------------------
+	CBaseEntity* ObtainParent()
+	{
+		pelletParent = GetParent();
+		return pelletParent;
 	}
 
 	bool IsInert()
 	{
 		return m_isInert;
 	}
-	
-	bool MakeConstraint( CBaseEntity *pObject )
-	{
-		IPhysicsObject *pReference = g_PhysWorldObject;
-		if ( GetMoveParent() )
-		{
-			pReference = GetMoveParent()->VPhysicsGetObject();
-		}
-		IPhysicsObject *pAttached = pObject->VPhysicsGetObject();
-		if ( !pReference || !pAttached )
-		{
-			return false;
-		}
 
-		constraint_fixedparams_t fixed;
-		fixed.Defaults();
-		fixed.InitWithCurrentObjectState( pReference, pAttached );
-
-		m_pConstraint = physenv->CreateFixedConstraint( pReference, pAttached, NULL, fixed );
-		m_pConstraint->SetGameData( (void *)this );
-
-		MakeInert();
-		return true;
-	}
+	bool MakeConstraint(CBaseEntity* pObject); // This has been moved out of the class declaration.
 
 	void MakeInert()
 	{
@@ -102,10 +96,21 @@ public:
 	void InputOnBreak( inputdata_t &inputdata )
 	{
 		UTIL_Remove(this);
+// ------------------------------------------------------------------------------
+// Additions, these are to remove the other pellet that this pellet is welded to.
+// ------------------------------------------------------------------------------
+		UTIL_Remove(otherPelletToRemove);
+		Event_Killed(CTakeDamageInfo(this, this, 0, DMG_DIRECT));
 	}
 
 	IPhysicsConstraint	*m_pConstraint;
 	bool				m_isInert;
+// ----------
+// Additions.
+// ----------
+	int pelletIndex;
+	CBaseEntity* pelletParent;
+	CGravityPellet* otherPelletToRemove;
 };
 
 LINK_ENTITY_TO_CLASS(gravity_pellet, CGravityPellet);
@@ -120,6 +125,23 @@ BEGIN_DATADESC( CGravityPellet )
 
 END_DATADESC()
 
+// --------------------------------------------------------------------------------
+// Addition, this defines a dynamic sized array to list all active Physgun pellets.
+// --------------------------------------------------------------------------------
+CUtlVector<CGravityPellet*> active_physgun_pellets;
+
+// ---------
+// Addition.
+// ---------
+CGravityPellet::CGravityPellet()
+{
+	active_physgun_pellets.AddToTail(this); // Add to a CUtlVector like this!
+	pelletIndex = active_physgun_pellets.Count(); - 1;
+	ConVarRef pPelletCount("physgun_pellets_in_play"); // Better than doing cvar->FindVar!
+	int m_pelletCount = pPelletCount.GetInt();
+	m_pelletCount += 1;
+	pPelletCount.SetValue(m_pelletCount); // Update the physgun_pellets_in_play ConVar.
+}
 
 CGravityPellet::~CGravityPellet()
 {
@@ -127,6 +149,70 @@ CGravityPellet::~CGravityPellet()
 	{
 		physenv->DestroyConstraint( m_pConstraint );
 	}
+
+// ----------
+// Additions.
+// ----------
+	active_physgun_pellets.FindAndRemove(this); // Remove from a CUtlVector like this!
+	ConVarRef pPelletCount("physgun_pellets_in_play"); // Better than doing cvar->FindVar!
+	int m_pelletCount = pPelletCount.GetInt();
+	m_pelletCount -= 1;
+	pPelletCount.SetValue(m_pelletCount); // Update the physgun_pellets_in_play ConVar.
+}
+
+// -------------------------------------------
+// Moved from inside of the class declaration.
+// -------------------------------------------
+bool CGravityPellet::MakeConstraint(CBaseEntity* pObject)
+{
+	IPhysicsObject* pReference = g_PhysWorldObject;
+	if (GetMoveParent())
+	{
+		pReference = GetMoveParent()->VPhysicsGetObject();
+	}
+	IPhysicsObject* pAttached = pObject->VPhysicsGetObject();
+	if (!pReference || !pAttached)
+	{
+		return false;
+	}
+
+	constraint_fixedparams_t fixed;
+	fixed.Defaults();
+	fixed.InitWithCurrentObjectState(pReference, pAttached);
+
+	m_pConstraint = physenv->CreateFixedConstraint(pReference, pAttached, NULL, fixed);
+	m_pConstraint->SetGameData((void*)this);
+
+// ---------- ---------------------------------------------------------------------------------------
+// Additions, iterate over all active Physgun pellets to find the pellet THIS pellet is attaching to.
+// --------------------------------------------------------------------------------------------------
+	CBaseEntity* pTest = dynamic_cast<CBaseEntity*>(pObject);
+	if (pTest)
+	{
+		for (int i = 0; i < active_physgun_pellets.Count(); i++) // Iterate over all elements of a CUtlVector like this!
+		{
+			CGravityPellet* pPellet = active_physgun_pellets.Element(i); // Find an element of a CUtlVector like this!
+
+			if (pPellet->pelletParent == pTest)
+				otherPelletToRemove = pPellet; // Found the pellet!
+			else
+				continue;
+
+			if (!pPellet) // This should never be triggered...
+			{
+				Warning("Unable to obtain a pellet for NO REASON!!!\n");
+				pPellet = NULL;
+			}
+		}
+	}
+	else
+	{
+		Warning("pTest has returned NULL for some reason?\n"); // This should never be triggered...
+		pTest = NULL;
+	}
+
+	MakeInert();
+	return true;
 }
 
 class CGravControllerPoint : public IMotionEvent
@@ -488,13 +574,13 @@ public:
 	void Equip( CBaseCombatCharacter *pOwner )
 	{
 		// add constraint ammo
-		pOwner->SetAmmoCount( MAX_PELLETS, m_iSecondaryAmmoType );
+//		pOwner->SetAmmoCount( MAX_PELLETS, m_iSecondaryAmmoType ); // Commented out.
 		BaseClass::Equip( pOwner );
 	}
 	void Drop(const Vector &vecVelocity)
 	{
-		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-		pOwner->SetAmmoCount( 0, m_iSecondaryAmmoType );
+//		CBasePlayer *pOwner = ToBasePlayer( GetOwner() ); // Commented out.
+//		pOwner->SetAmmoCount( 0, m_iSecondaryAmmoType ); // Commented out.
 		// destroy all constraints
 		BaseClass::Drop(vecVelocity);
 	}
@@ -514,7 +600,7 @@ public:
 	void SoundStart( void );
 	void SoundUpdate( void );
 	void AddPellet( CGravityPellet *pPellet, CBaseEntity *pParent, const Vector &surfaceNormal );
-	void DeleteActivePellets();
+//	void DeleteActivePellets(); // Commented out.
 	void SortPelletsForObject( CBaseEntity *pObject );
 	void SetObjectPelletsColor( int r, int g, int b );
 	void CreatePelletAttraction( float radius, CBaseEntity *pObject );
@@ -552,6 +638,9 @@ public:
 
 	CBaseEntity *GetBeamEntity();
 
+	pelletlist_t m_activePellets[50]; // Moved from private section, also 50 is an arbitrary number which replaces MAX_PELLETS.
+	int			m_pelletCount; // Moved from private section.
+
 	DECLARE_SERVERCLASS();
 
 private:
@@ -566,8 +655,6 @@ private:
 	Vector		m_originalObjectPosition;
 
 	CGravControllerPoint		m_gravCallback;
-	pelletlist_t m_activePellets[MAX_PELLETS];
-	int			m_pelletCount;
 	int			m_objectPelletCount;
 	
 	int			m_pelletHeld;
@@ -684,7 +771,7 @@ void CWeaponGravityGun::EffectCreate( void )
 void CWeaponGravityGun::EffectUpdate( void )
 {
 	Vector start, angles, forward, right;
-	trace_t tr;
+	trace_t tr, tr2; // Define an additional trace_t called tr2!
 
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	if ( !pOwner )
@@ -703,7 +790,15 @@ void CWeaponGravityGun::EffectUpdate( void )
 	start = pOwner->Weapon_ShootPosition();
 	Vector end = start + forward * 4096;
 
+// ---------------------------------------------------------------------------------------------
+// This is for the second trace_t that will see if the player is standing on a grabbable object!
+// ---------------------------------------------------------------------------------------------
+	Vector belowPlayer = pOwner->GetAbsOrigin();
+	belowPlayer.z -= 128; // 128 units is an arbitrary amount!
+
 	UTIL_TraceLine( start, end, MASK_SHOT, pOwner, COLLISION_GROUP_NONE, &tr );
+	UTIL_TraceHull(start, belowPlayer, -Vector(32, 32, 0), Vector(32, 32, 0), MASK_SHOT, pOwner, COLLISION_GROUP_NONE, &tr2); // Addition.
+
 	end = tr.endpos;
 	float distance = tr.fraction * 4096;
 	if ( tr.fraction != 1 )
@@ -723,8 +818,24 @@ void CWeaponGravityGun::EffectUpdate( void )
 		ClearMultiDamage();
 		pEntity->DispatchTraceAttack( CTakeDamageInfo( pOwner, pOwner, 0, DMG_PHYSGUN ), forward, &tr );
 		ApplyMultiDamage();
-		AttachObject( pEntity, start, tr.endpos, distance );
+
+// ------------------------------------------------------
+// If the player is standing on pEntity, don't attach it!
+// ------------------------------------------------------
+		if (pOwner->GetGroundEntity() == pEntity || tr2.m_pEnt == pEntity)
+			DetachObject();
+		else
+			AttachObject( pEntity, start, tr.endpos, distance );
 		m_lastYaw = pOwner->EyeAngles().y;
+	}
+
+// ---------------------------------
+// Similar to the change from above.
+// ---------------------------------
+	if (tr.DidHitNonWorldEntity())
+	{
+		if (pOwner->GetGroundEntity() == tr.m_pEnt || tr2.m_pEnt == tr.m_pEnt)
+			DetachObject();
 	}
 
 	// Add the incremental player yaw to the target transform
@@ -977,7 +1088,7 @@ void CWeaponGravityGun::SoundUpdate( void )
 			
 // -------------------------------------------------------------------
 // Addition to prevent a game crash when certain objects are grabbed.
-// Not covered in a video (yet!), can kill certain NPCs i.e. Manhacks.
+// Can kill certain NPCs i.e. Manhacks.
 // -------------------------------------------------------------------
 
 			float fade = 100;
@@ -1009,7 +1120,7 @@ void CWeaponGravityGun::SoundUpdate( void )
 
 void CWeaponGravityGun::AddPellet( CGravityPellet *pPellet, CBaseEntity *pAttach, const Vector &surfaceNormal )
 {
-	Assert(m_pelletCount<MAX_PELLETS);
+//	Assert(m_pelletCount<MAX_PELLETS); // Commented out.
 
 	m_activePellets[m_pelletCount].localNormal = surfaceNormal;
 	if ( pAttach )
@@ -1021,6 +1132,12 @@ void CWeaponGravityGun::AddPellet( CGravityPellet *pPellet, CBaseEntity *pAttach
 	m_activePellets[m_pelletCount].pellet = pPellet;
 	m_activePellets[m_pelletCount].parent = pAttach;
 	m_pelletCount++;
+
+// ----------
+// Additions.
+// ----------
+	pPellet->SetParent(pAttach);
+	pPellet->pelletParent = pAttach;
 }
 
 void CWeaponGravityGun::SortPelletsForObject( CBaseEntity *pObject )
@@ -1028,8 +1145,15 @@ void CWeaponGravityGun::SortPelletsForObject( CBaseEntity *pObject )
 	m_objectPelletCount = 0;
 	for ( int i = 0; i < m_pelletCount; i++ )
 	{
+// --------------------------------------------
+// Additions, change the if statement slightly.
+//---------------------------------------------
+		CGravityPellet* pPellet = active_physgun_pellets.Element(i);
+		if (pPellet == NULL)
+			Warning("Somehow a pellet is NULL when it shouldn't be?\n"); // This should never be triggered...
+
 		// move pellets attached to the active object to the front of the list
-		if ( m_activePellets[i].parent == pObject && !m_activePellets[i].pellet->IsInert() )
+		if ( pPellet->pelletParent == pObject && !pPellet->IsInert() ) // m_activePellets[i].parent == pObject && !m_activePellets[i].pellet->IsInert()
 		{
 			if ( i != 0 )
 			{
@@ -1076,6 +1200,9 @@ CBaseEntity *CWeaponGravityGun::GetBeamEntity()
 	return pOwner;
 }
 
+// Removed, since the Physgun reloading was reworked.
+
+/*
 void CWeaponGravityGun::DeleteActivePellets()
 {
 	CBaseEntity *pEnt = GetBeamEntity();
@@ -1103,6 +1230,7 @@ void CWeaponGravityGun::DeleteActivePellets()
 	}
 	m_pelletCount = 0;
 }
+*/
 
 void CWeaponGravityGun::CreatePelletAttraction( float radius, CBaseEntity *pObject )
 {
@@ -1231,6 +1359,12 @@ void CWeaponGravityGun::AttachObject( CBaseEntity *pObject, const Vector& start,
 	{
 		m_distance = distance;
 
+// ---------------------------------------------------
+// Addition, keep things consistent with EffectUpdate.
+// ---------------------------------------------------
+		if (m_distance < 36)
+			return;
+
 		m_gravCallback.AttachEntity( pObject, pPhysics, end );
 		float mass = pPhysics->GetMass();
 		Msg( "Object mass: %.2f lbs (%.2f kg)\n", kg2lbs(mass), mass );
@@ -1267,6 +1401,7 @@ void CWeaponGravityGun::AttachObject( CBaseEntity *pObject, const Vector& start,
 //=========================================================
 void CWeaponGravityGun::PrimaryAttack( void )
 {
+	m_flNextPrimaryAttack = gpGlobals->curtime + 0.1; // Addition.
 	if ( !m_active )
 	{
 		SendWeaponAnim( ACT_VM_PRIMARYATTACK );
@@ -1329,17 +1464,26 @@ void CWeaponGravityGun::SecondaryAttack( void )
 	}
 
 	QAngle angles;
-	WeaponSound( SINGLE );
-	pOwner->RemoveAmmo( 1, m_iSecondaryAmmoType );
 
 	VectorAngles( tr.plane.normal, angles );
 	Vector endPoint = tr.endpos + tr.plane.normal;
+
+// --------------------------------------------------------------
+// Additions, don't place a gravity pellet if it is too far away!
+// --------------------------------------------------------------
+	Vector distance = pOwner->Weapon_ShootPosition() - endPoint;
+	float magnitude = distance.Length();
+	if (magnitude > 512) // 512 units is an arbitrary amount!
+		return;
+
 	CGravityPellet *pPellet = (CGravityPellet *)CBaseEntity::Create( "gravity_pellet", endPoint, angles, this );
 	if ( pHit )
 	{
 		pPellet->SetParent( pHit );
 	}
 	AddPellet( pPellet, pHit, tr.plane.normal );
+	WeaponSound(SINGLE); // Moved down a bit.
+	pOwner->RemoveAmmo(1, m_iSecondaryAmmoType); // Moved down a bit.
 
 	// UNDONE: Probably should just do this client side
 	CBaseEntity *pEnt = GetBeamEntity();
@@ -1355,8 +1499,8 @@ void CWeaponGravityGun::SecondaryAttack( void )
 
 void CWeaponGravityGun::WeaponIdle( void )
 {
-	if ( HasWeaponIdleTimeElapsed() )
-	{
+//	if ( HasWeaponIdleTimeElapsed() ) // Commented out.
+//	{
 		SendWeaponAnim( ACT_VM_IDLE );
 		if ( m_active )
 		{
@@ -1370,13 +1514,14 @@ void CWeaponGravityGun::WeaponIdle( void )
 					WeaponSound( SPECIAL1 );
 					m_flNextPrimaryAttack = gpGlobals->curtime + 0.75;
 					m_activePellets[m_pelletHeld].pellet->MakeInert();
+					pPellet->ObtainParent(); // Addition.
 				}
 			}
 
 			EffectDestroy();
 			SoundDestroy();
 		}
-	}
+//	}
 }
 
 void CWeaponGravityGun::ItemPostFrame( void )
@@ -1384,6 +1529,13 @@ void CWeaponGravityGun::ItemPostFrame( void )
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	if (!pOwner)
 		return;
+
+// ------------------------------------------------------------------------------------
+// Additions, keep m_pelletCount in sync with the physgun_pellets_in_play ConVar value.
+// ------------------------------------------------------------------------------------
+	ConVarRef pPelletCount("physgun_pellets_in_play");
+	int totalPelletsInPlay = pPelletCount.GetInt();
+	m_pelletCount = totalPelletsInPlay;
 
 	if ( pOwner->m_afButtonPressed & IN_ATTACK2 )
 	{
@@ -1423,11 +1575,51 @@ bool CWeaponGravityGun::Reload( void )
 {
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 
+	// Rework the reload functionality!
+
+	/*
 	if ( pOwner->GetAmmoCount(m_iSecondaryAmmoType) != MAX_PELLETS )
 	{
 		pOwner->SetAmmoCount( MAX_PELLETS, m_iSecondaryAmmoType );
 		DeleteActivePellets();
 		WeaponSound( RELOAD );
+		return true;
+	}
+	*/
+
+// -------------------------------------------------------------------------
+// Some of this was taken from the now defunct DeleteActivePellets function.
+// -------------------------------------------------------------------------
+	CBaseEntity* pEnt = GetBeamEntity();
+
+	for (int j = active_physgun_pellets.Count(); j > 0; j--)
+	{
+		CGravityPellet* pPellet = active_physgun_pellets.Element(j - 1);
+		m_activePellets[j].pellet = pPellet;
+
+		Vector distance = pOwner->Weapon_ShootPosition() - pPellet->GetAbsOrigin();
+		float magnitude = distance.Length();
+		if (magnitude > 512) // 512 units is an arbitrary amount!
+			continue;
+
+		Vector forward;
+		AngleVectors(pPellet->GetAbsAngles(), &forward);
+		g_pEffects->Dust(pPellet->GetAbsOrigin(), forward, 32, 30);
+
+		CBeam* pBeam = CBeam::BeamCreate(PHYSGUN_BEAM_SPRITE, 1.5);
+		pBeam->PointEntInit(pPellet->GetAbsOrigin(), pEnt);
+		pBeam->SetEndAttachment(1);
+		pBeam->SetBrightness(255);
+		pBeam->SetColor(255, 0, 0);
+		pBeam->RelinkBeam();
+		pBeam->LiveForTime(0.1);
+
+		pPellet->Event_Killed(CTakeDamageInfo(this, this, 0, DMG_DIRECT));
+		pOwner->GiveAmmo(1, m_iSecondaryAmmoType);
+
+		m_pelletCount--;
+
+		WeaponSound(RELOAD);
 		return true;
 	}
 

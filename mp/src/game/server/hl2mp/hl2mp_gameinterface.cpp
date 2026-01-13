@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Allows maxplayers to be 1 for Source 2013 Multiplayer mods.
 //
 //=============================================================================//
 
@@ -18,7 +18,7 @@
 
 void CServerGameClients::GetPlayerLimits( int& minplayers, int& maxplayers, int &defaultMaxPlayers ) const
 {
-	minplayers = defaultMaxPlayers = 2; 
+	minplayers = defaultMaxPlayers = 1; // 2
 	maxplayers = 16;
 }
 

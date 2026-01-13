@@ -1,7 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Player for HL2. Fixed broken VGUI screen functionality.
-//				Also moved autojumping code to gamemovement.cpp
+//				Also moved autojumping code to gamemovement.cpp.
+//				Also adds a weapon drop system.
 //
 //=============================================================================//
 
@@ -401,10 +402,15 @@ CHL2_Player::CHL2_Player()
 //
 #define SUITPOWER_CHARGE_RATE	12.5											// 100 units in 8 seconds
 
+// ---------------------------------------------------------------------------------
+// You can modify the drainage rate of suit devices by changing the second argument.
+// For example, you can have 10 seconds of sprint time by changing 12.5f to 10.0f.
+// ---------------------------------------------------------------------------------
+
 #ifdef HL2MP
 	CSuitPowerDevice SuitDeviceSprint( bits_SUIT_DEVICE_SPRINT, 25.0f );				// 100 units in 4 seconds
 #else
-	CSuitPowerDevice SuitDeviceSprint( bits_SUIT_DEVICE_SPRINT, 12.5f );				// 100 units in 8 seconds
+	CSuitPowerDevice SuitDeviceSprint( bits_SUIT_DEVICE_SPRINT, 10.0f ); // 12.5f		// 100 units in 10 seconds
 #endif
 
 #ifdef HL2_EPISODIC
@@ -1094,7 +1100,11 @@ void CHL2_Player::Spawn(void)
 
 	SuitPower_SetCharge( 100 );
 
-	m_Local.m_iHideHUD |= HIDEHUD_CHAT;
+// ---------------------------------------------------------------------------
+// This line suppresses the sv_cheats message, but enables chat functionality.
+// ---------------------------------------------------------------------------
+	// m_Local.m_iHideHUD |= HIDEHUD_CHAT;
+	m_Local.m_iHideHUD = 0;
 
 	m_pPlayerAISquad = g_AI_SquadManager.FindCreateSquad(AllocPooledString(PLAYER_SQUADNAME));
 
@@ -2720,16 +2730,35 @@ bool CHL2_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 //-----------------------------------------------------------------------------
 bool CHL2_Player::ClientCommand( const CCommand &args )
 {
-#if	HL2_SINGLE_PRIMARY_WEAPON_MODE
+// ----------------------------------------------------------------
+// Remove this if statement to re-enable to DropPrimary ConCommand.
+// ----------------------------------------------------------------
+// #if HL2_SINGLE_PRIMARY_WEAPON_MODE
 
 	//Drop primary weapon
 	if ( !Q_stricmp( args[0], "DropPrimary" ) )
 	{
-		Weapon_DropSlot( WEAPON_PRIMARY_SLOT );
+// -----------------------------------------------------
+// Change this so we drop the currently equipped weapon.
+// -----------------------------------------------------
+		if (IsAlive() && !IsInAVehicle()) // Make sure we are alive and NOT in a vehicle.
+		{
+			CBaseCombatWeapon* pWeapon = GetActiveWeapon(); // What is the currently equipped weapon?
+			if (pWeapon) // Make sure we actually have a weapon!
+			{
+// -----------------------------------------------------
+// Find the bucket/slot position of the weapon, then it.
+// -----------------------------------------------------
+				int weaponSlot = pWeapon->GetSlot();
+				int weaponPosition = pWeapon->GetPosition();
+				if(pWeapon->CanDrop()) // If the weapon can be dropped, then drop it!
+					Weapon_DropSlot(weaponSlot, weaponPosition);
+			}
+		}
 		return true;
 	}
 
-#endif
+// #endif
 
 	if ( !Q_stricmp( args[0], "emit" ) )
 	{

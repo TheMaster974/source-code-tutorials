@@ -1,6 +1,7 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Fixes a reload glitch when the phys_swap command is used.
+//			Also provides some comments about modifying the fire rate/reload speed.
 //
 //=============================================================================//
 
@@ -59,6 +60,10 @@ public:
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 	void DryFire( void );
+	
+// ------------------------------------------------------------------
+// This actually goes unused, since SequenceDuration is used instead.
+// ------------------------------------------------------------------
 	virtual float GetFireRate( void ) { return 0.7; };
 
 #ifndef CLIENT_DLL
@@ -191,7 +196,7 @@ bool CWeaponShotgun::Reload( void )
 	SendWeaponAnim( ACT_VM_RELOAD );
 
 	pOwner->m_flNextAttack = gpGlobals->curtime;
-	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration();
+	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration(); // or use something instead of SequenceDuration();!
 
 	return true;
 }
@@ -308,7 +313,7 @@ void CWeaponShotgun::PrimaryAttack( void )
 	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
 
 	// Don't fire again until fire animation has completed
-	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration();
+	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration(); // or use + GetFireRate(); instead.
 	m_iClip1 -= 1;
 
 	// player "shoot" animation
@@ -360,7 +365,7 @@ void CWeaponShotgun::SecondaryAttack( void )
 	SendWeaponAnim( ACT_VM_SECONDARYATTACK );
 
 	// Don't fire again until fire animation has completed
-	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration();
+	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration(); // or use + GetFireRate(); instead.
 	m_iClip1 -= 2;	// Shotgun uses same clip for primary and secondary attacks
 
 	// player "shoot" animation
@@ -592,6 +597,11 @@ void CWeaponShotgun::ItemHolsterFrame( void )
 	// We can't be active
 	if ( GetOwner()->GetActiveWeapon() == this )
 		return;
+	
+// --------------------------------------------------------------------------------------------------
+// This fixes a reload glitch! Thanks to benshulz4179 for telling me about a simpler way to add this!
+// --------------------------------------------------------------------------------------------------
+	m_bInReload = false;
 
 	// If it's been longer than three seconds, reload
 	if ( ( gpGlobals->curtime - m_flHolsterTime ) > sk_auto_reload_time.GetFloat() )

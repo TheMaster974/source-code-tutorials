@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Added Hopwire ammo type.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 #include "cbase.h"
 #include "hl2mp_gamerules.h"
@@ -935,6 +935,10 @@ CAmmoDef *GetAmmoDef()
 		def.AddAmmoType("SMG1_Grenade",		DMG_BURN,					TRACER_NONE,			0,			0,			3,			0,							0 );
 		def.AddAmmoType("Grenade",			DMG_BURN,					TRACER_NONE,			0,			0,			5,			0,							0 );
 		def.AddAmmoType("slam",				DMG_BURN,					TRACER_NONE,			0,			0,			5,			0,							0 );
+// ---------
+// Addition.
+// ---------
+		def.AddAmmoType("Hopwire",			DMG_BLAST,					TRACER_NONE,			0,			0,			5,			0,							0 );
 	}
 
 	return &def;

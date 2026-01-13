@@ -2,6 +2,7 @@
 //
 // Purpose: Functions dealing with the player. Check CheatImpulseCommands!
 //			Fixed broken VGUI screen functionality.
+//			Also adds a weapon drop system.
 //===========================================================================//
 
 #include "cbase.h"
@@ -437,6 +438,9 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_ARRAY( m_szLastPlaceName, FIELD_CHARACTER, MAX_PLACE_NAME_LENGTH ),
 
 	DEFINE_FIELD( m_autoKickDisabled, FIELD_BOOLEAN ),
+
+	// Addition from Mapbase.
+	DEFINE_FIELD( m_bDrawPlayerModelExternally, FIELD_BOOLEAN ),
 
 	// Function Pointers
 	DEFINE_FUNCTION( PlayerDeathThink ),
@@ -6162,10 +6166,12 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 // Additions.
 // ----------
 		GiveAmmo( 30, "SniperRound" );
+		GiveAmmo( 100, "GaussEnergy" );
 		GiveAmmo( 5, "SLAM" );
 		GiveAmmo( 5, "Molotov" );
 		GiveAmmo( 5, "Hopwire" );
 		GiveAmmo( 5, "FlareRound" );
+		GiveAmmo( 16, "Gravity" );
 
 		GiveNamedItem( "weapon_smg1" );
 		GiveNamedItem( "weapon_frag" );
@@ -6185,8 +6191,9 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 // ----------
 // Additions.
 // ----------
-		GiveNamedItem( "weapon_sniperrifle" );
 		GiveNamedItem( "weapon_physgun" );
+		GiveNamedItem( "weapon_sniperrifle" );
+		GiveNamedItem( "weapon_iontau" );
 		GiveNamedItem( "weapon_smg2" );
 		GiveNamedItem( "weapon_slam" );
 		GiveNamedItem( "weapon_molotov" );
@@ -6195,6 +6202,7 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 		GiveNamedItem( "weapon_cguard" );
 		GiveNamedItem( "weapon_immolator" );
 		GiveNamedItem( "weapon_extinguisher" );
+		GiveNamedItem( "weapon_flash" );
 
 		if ( GetHealth() < 100 )
 		{
@@ -6737,11 +6745,16 @@ bool CBasePlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 			// Always switch to a newly-picked up weapon
 			if ( !PlayerHasMegaPhysCannon() )
 			{
+// -------------------------------------------------------------------
+// Modification, this stops ammo duplication when a weapon is dropped.
+// -------------------------------------------------------------------
+				/*
 				// If it uses clips, load it full. (this is the first time you've picked up this type of weapon)
 				if ( pWeapon->UsesClipsForAmmo1() )
 				{
 					pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
 				}
+				*/
 
 				Weapon_Switch( pWeapon );
 			}
@@ -7400,11 +7413,11 @@ void CBasePlayer::Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTar
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : weaponSlot - 
-//-----------------------------------------------------------------------------
-void CBasePlayer::Weapon_DropSlot( int weaponSlot )
+//-------------------------------------------------------------------------------
+// Purpose: Adds a weapon drop system, added an extra input of int weaponPosition
+// Input  : weaponSlot - weaponPosition
+//-------------------------------------------------------------------------------
+void CBasePlayer::Weapon_DropSlot( int weaponSlot, int weaponPosition )
 {
 	CBaseCombatWeapon *pWeapon;
 
@@ -7418,7 +7431,8 @@ void CBasePlayer::Weapon_DropSlot( int weaponSlot )
 			// If the slots match, it's already occupied
 			if ( pWeapon->GetSlot() == weaponSlot )
 			{
-				Weapon_Drop( pWeapon, NULL, NULL );
+				if(pWeapon->GetPosition() == weaponPosition) // Addition.
+					Weapon_Drop( pWeapon, NULL, NULL );
 			}
 		}
 	}
@@ -8059,6 +8073,9 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 
 		SendPropInt			( SENDINFO( m_nWaterLevel ), 2, SPROP_UNSIGNED ),
 		SendPropFloat		( SENDINFO( m_flLaggedMovementValue ), 0, SPROP_NOSCALE ),
+
+		// Addition from Mapbase.
+		SendPropBool		( SENDINFO( m_bDrawPlayerModelExternally ) ),
 
 	END_SEND_TABLE()
 

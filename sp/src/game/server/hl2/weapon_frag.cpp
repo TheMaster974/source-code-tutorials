@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Moved CWeaponFrag class definition for flash grenade.
 //
 //=============================================================================//
 
@@ -16,6 +16,12 @@
 #include "soundent.h"
 #include "gamestats.h"
 
+// ----------
+// Additions.
+// ----------
+#include "weapon_frag.h"
+#include "explode.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -27,51 +33,9 @@
 
 #define GRENADE_RADIUS	4.0f // inches
 
-//-----------------------------------------------------------------------------
-// Fragmentation grenades
-//-----------------------------------------------------------------------------
-class CWeaponFrag: public CBaseHLCombatWeapon
-{
-	DECLARE_CLASS( CWeaponFrag, CBaseHLCombatWeapon );
-public:
-	DECLARE_SERVERCLASS();
-
-public:
-	CWeaponFrag();
-
-	void	Precache( void );
-	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
-	void	PrimaryAttack( void );
-	void	SecondaryAttack( void );
-	void	DecrementAmmo( CBaseCombatCharacter *pOwner );
-	void	ItemPostFrame( void );
-
-	bool	Deploy( void );
-	bool	Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
-
-	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
-	
-	bool	Reload( void );
-
-	bool	ShouldDisplayHUDHint() { return true; }
-
-private:
-	void	ThrowGrenade( CBasePlayer *pPlayer );
-	void	RollGrenade( CBasePlayer *pPlayer );
-	void	LobGrenade( CBasePlayer *pPlayer );
-	// check a throw from vecSrc.  If not valid, move the position back along the line to vecEye
-	void	CheckThrowPosition( CBasePlayer *pPlayer, const Vector &vecEye, Vector &vecSrc );
-
-	bool	m_bRedraw;	//Draw the weapon again after throwing a grenade
-	
-	int		m_AttackPaused;
-	bool	m_fDrawbackFinished;
-
-	DECLARE_ACTTABLE();
-
-	DECLARE_DATADESC();
-};
-
+// -------------------------------------------------------
+// Moved class definition for CWeaponFrag to weapon_frag.h
+// -------------------------------------------------------
 
 BEGIN_DATADESC( CWeaponFrag )
 	DEFINE_FIELD( m_bRedraw, FIELD_BOOLEAN ),
@@ -478,3 +442,41 @@ void CWeaponFrag::RollGrenade( CBasePlayer *pPlayer )
 	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
 }
 
+// ----------
+// Additions.
+// ----------
+// ------------------------------------------------------------------------
+// If the player drops this weapon, the right amount of ammo is subtracted.
+// ------------------------------------------------------------------------
+void CWeaponFrag::Drop(const Vector& vecVelocity)
+{
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+	if (!pPlayer)
+		return;
+
+	DecrementAmmo(pPlayer);
+	m_takedamage = DAMAGE_YES;
+	BaseClass::Drop(vecVelocity);
+}
+
+// Makes the weapon receive damage when it is created.
+void CWeaponFrag::Spawn(void)
+{
+	BaseClass::Spawn();
+
+	m_takedamage = DAMAGE_YES;
+	m_iHealth = 20;
+}
+
+// Explode!
+void CWeaponFrag::Event_Killed(const CTakeDamageInfo& info)
+{
+	m_takedamage = DAMAGE_NO;
+
+	UTIL_ScreenShake(GetAbsOrigin(), 25.0, 150.0, 1.0, 750, SHAKE_START);
+
+	ExplosionCreate(GetAbsOrigin() + Vector(0, 0, 16), GetAbsAngles(), NULL, 100, 200,
+		SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
+
+	UTIL_Remove(this);
+}

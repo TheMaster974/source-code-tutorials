@@ -1,6 +1,7 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose:		Projectile shot from the AR2 
+// Purpose:		Projectile shot from the AR2.
+//				Prevents the weapon from being dropped when charging the alt-fire.
 //
 // $Workfile:     $
 // $Date:         $
@@ -8,7 +9,7 @@
 //-----------------------------------------------------------------------------
 // $Log: $
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #ifndef	WEAPONAR2_H
@@ -46,6 +47,7 @@ public:
 	float	GetFireRate( void ) { return 0.1f; }
 
 	bool	CanHolster( void );
+	bool	CanDrop( void ); // Addition.
 	bool	Reload( void );
 
 	int		CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }

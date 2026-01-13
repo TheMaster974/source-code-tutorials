@@ -1,0 +1,8 @@
+UnlitGeneric
+{
+	$basetexture vgui/loading/ui/loading_lambda_bg
+	$translucent 1
+	$ignorez 1
+	$no_fullbright 1
+	$nolod 1
+}

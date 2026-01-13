@@ -153,12 +153,19 @@ void CGravityVortexController::PullPlayersInRange( void )
 bool CGravityVortexController::KillNPCInRange( CBaseEntity *pVictim, IPhysicsObject **pPhysObj )
 {
 	CBaseCombatCharacter *pBCC = pVictim->MyCombatCharacterPointer();
+// ------------------------------------------------------------------------------------------------------------------
+// Apparently, this code causes a game crash now with player ragdolls! The fix is to return here if pBCC is a player.
+// ------------------------------------------------------------------------------------------------------------------
+	if (pBCC != NULL && pBCC->IsPlayer())
+		return false;
 
 	// See if we can ragdoll
 	if ( pBCC != NULL && pBCC->CanBecomeRagdoll() )
 	{
-		// Don't bother with striders
-		if ( FClassnameIs( pBCC, "npc_strider" ) )
+// --------------------------------------------------
+// Don't bother with striders, gunships or dropships!
+// --------------------------------------------------
+		if ( FClassnameIs( pBCC, "npc_strider" ) || FClassnameIs(pBCC, "npc_combinedropship") || FClassnameIs(pBCC, "npc_combinegunship") )
 			return false;
 
 		// TODO: Make this an interaction between the NPC and the vortex
@@ -262,8 +269,14 @@ void CGravityVortexController::PullThink( void )
 		// FIXME: Need a more deterministic method here
 		if ( dist < 48.0f )
 		{
-			ConsumeEntity( pEnts[i] );
-			continue;
+// --------------------------------------------------------
+// Don't consume players, as this can lead to game crashes!
+// --------------------------------------------------------
+			if (!pEnts[i]->IsPlayer())
+			{
+				ConsumeEntity(pEnts[i]);
+				continue;
+			}
 		}
 
 		// Must be within the radius
@@ -289,7 +302,12 @@ void CGravityVortexController::PullThink( void )
 	else
 	{
 		//Msg( "Consumed %.2f kilograms\n", m_flMass );
-		//CreateDenseBall();
+// --------------------------------------------------------------------------------------------------------------------------------------------------
+// If you choose to allow the paint can model to spawn once the Hopwire expires, be warned that the game can crash if it didn't consume anything!
+// This addition prevents the model from spawning if nothing was consumed i.e. m_flMass = 0. Thanks to EpicplayerBlueShift for telling me about this!
+// --------------------------------------------------------------------------------------------------------------------------------------------------
+//		if (m_flMass > 0.0f)
+//			CreateDenseBall();
 	}
 }
 
@@ -496,7 +514,13 @@ void CGrenadeHopwire::CombatThink( void )
 	// Quick screen flash
 	CBasePlayer *pPlayer = ToBasePlayer( GetThrower() );
 	color32 white = { 255,255,255,255 };
-	UTIL_ScreenFade( pPlayer, white, 0.2f, 0.0f, FFADE_IN );
+
+// ----------------------------------------------------------------
+// This has been changed slightly, now the screen flash only occurs
+// when the Hopwire detonation is in the player's FOV and LOS.
+// ----------------------------------------------------------------
+	if(pPlayer->IsInFieldOfView(GetAbsOrigin()) && pPlayer->IsLineOfSightClear(this))
+		UTIL_ScreenFade( pPlayer, white, 0.2f, 0.0f, FFADE_IN );
 
 	// Create the vortex controller to pull entities towards us
 	if ( hopwire_vortex.GetBool() )

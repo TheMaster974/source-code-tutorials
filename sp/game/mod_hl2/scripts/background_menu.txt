@@ -1,0 +1,171 @@
+//======== Created by Waddelz. https://www.youtube.com/@WadDeIz_Real. ============//
+//
+// Purpose: This file contains information for bik backgrounds. what that means is that you can
+//			Basically make it so the mod uses .bik video backgrounds instead of the normal source
+//			engine real time backgrounds!
+//
+// $NoKeywords: $
+//
+//=================================================================================//
+"BackgroundMenu"
+{	
+	//NOTE: IF YOU SET UseVideoBackground TO 1 THEN YOU NEED TO GO TO EVERY CHAPTER/ACHIEVEMENT IMAGE AND ADD IGNOREZ AS A PARAMATER FOR THE VMT.
+	//SO THET WOULD LOOK LIKE
+	//	"UnlitGeneric"
+	//	{
+    //	    "$baseTexture"    "VGUI/chapters/chapterX"
+    //	    "$vertexalpha"    "1"
+    //	    "$gammaColorRead" "1"
+    //	    "$linearWrite"    "1"
+    //	    "$ignorez"        "1"
+	//	}
+	//YOU WOULD ALSO NEED TO DO THIS TO EVERY OTHER VGUI ITEM IMAGE MATERIAL YOU MAKE. i already did it
+	//for the achievements, new game and bonus maps icons/materials so all the base mainmenu items are done so you're just going to need to do
+	//it to new items you make
+	
+	//set this to 1 if you want it to use the bik backgrounds instead of the real time ones	
+	"UseVideoBackground" "0"
+	
+	//this is the background load type. There are 3 different load types:
+	//
+	//	'Random'
+	//	'FullyRandom'
+	//	'UseConVar'
+	//  'ComparePreviousMap'
+	//
+	// Random - chooses a random MenuData out of all the menu data items to show.
+	// FullyRandom - chooses the video name, song name and song volume all from random menu data's. (for each item it chooses a random menu data item)
+	// UseConVar - uses the value of BackgroundConvar compared to MinValue inside the data items.
+	// ComparePreviousMap - Read below and the background_menu_criteria.txt for more info.
+	"BackgroundLoadType" "UseConVar"
+	
+	//the convar name to check to see what background to play. more info on this later (above the "MinValue" "0")
+	"BackgroundConvar" "sv_unlockedchapters"
+	
+	//This is a menu data item. Each one of these is a different background!
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act03" 				//the background video to play. do not add the .bik extention
+		
+		//Inside here is the music to play for the backgrounds. It chooses a random one of these songs to play.
+		"music"
+		{
+			"music/hl2_song33.mp3" "0.8"		//the key is the name of the song to play and the value is the volume for that song
+		}
+		
+		//UseConVar LOAD TYPE ONLY:
+		//
+		//This is the min value the BackgroundConvar convar needs to be for this background to show. if the value of BackgroundConvar is less
+		//then all the MinValue's then it will choose the first menu item. If there is a MenuData item with the MinValue more then this's MinValue
+		//but less then the BackgroundConvar's value then it will chose that menu item over this item.
+		"MinValue" "0"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//if all of the map critera checks fail for all the menu data items. then this will determin if this should be the bik video to play. If all
+		//of the menu data's 'IsDefault' key is set to zero then it will choose a random menu item
+		"IsDefault" "0"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//if the previous map name is empty (no map has been played) then this will be the default background selected if set to 1.
+		"DefaultIfPreviousMapEmpty" "1"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//This is the criteria the last played map name (not including background maps) must follow for this background to show. Read background_menu_criteria.txt for more information.
+		//but long story short if the map name matches this criteria then it will choose this menu item. 
+		//If all criterias are wrong for each menu item then it will choose a menu data item with the 'IsDefault' key set to 1 (if all IsDefault keys are set to 0 then it will choose a random menu item).
+		//
+		//in this example if the previously played map is a d1_* map (like d1_trainstation, d1_canals etc..) then it will chose this menu item. Else it will chose the other menu item
+		"MapCriteria" "d1_*"
+	}
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act04" 				//the background video to play. do not add the .bik extention
+		
+		//Inside here is the music to play for the backgrounds. It chooses a random one of these songs to play.
+		"music"
+		{
+			"music/hl2_song2.mp3" "0.9"		//the key is the name of the song to play and the value is the volume for that song
+			"music/hl2_song30.mp3" "1.0"		//the key is the name of the song to play and the value is the volume for that song
+		}
+		
+		//UseConVar LOAD TYPE ONLY:
+		//
+		//This is the min value the BackgroundConvar convar needs to be for this background to show. if the value of BackgroundConvar is less
+		//then all the MinValue's then it will choose the first menu item. If there is a MenuData item with the MinValue more then this's MinValue
+		//but less then the BackgroundConvar's value then it will chose that menu item over this item.
+		"MinValue" "2"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//if all of the map critera checks fail for all the menu data items. then this will determin if this should be the bik video to play. If all
+		//of the menu data's 'IsDefault' key is set to zero then it will choose a random menu item
+		"IsDefault" "1"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//if the previous map name is empty (no map has been played) then this will be the default background selected if set to 1.
+		"DefaultIfPreviousMapEmpty" "0"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//This is the criteria the last played map name (not including background maps) must follow for this background to show. Read background_menu_criteria.txt for more information.
+		//but long story short if the map name matches this criteria then it will choose this menu item. 
+		//If all criterias are wrong for each menu item then it will choose a menu data item with the 'IsDefault' key set to 1 (if all IsDefault keys are set to 0 then it will choose a random menu item).
+		"MapCriteria" ""
+	}
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act05" 				//the background video to play. do not add the .bik extention
+		
+		//Inside here is the music to play for the backgrounds. It chooses a random one of these songs to play.
+		"music"
+		{
+			"music/hl1_song3.mp3" "0.85"		//the key is the name of the song to play and the value is the volume for that song
+		}
+		
+		//UseConVar LOAD TYPE ONLY:
+		//
+		//This is the min value the BackgroundConvar convar needs to be for this background to show. if the value of BackgroundConvar is less
+		//then all the MinValue's then it will choose the first menu item. If there is a MenuData item with the MinValue more then this's MinValue
+		//but less then the BackgroundConvar's value then it will chose that menu item over this item.
+		"MinValue" "3"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//if all of the map critera checks fail for all the menu data items. then this will determin if this should be the bik video to play. If all
+		//of the menu data's 'IsDefault' key is set to zero then it will choose a random menu item
+		"IsDefault" "0"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//if the previous map name is empty (no map has been played) then this will be the default background selected if set to 1.
+		"DefaultIfPreviousMapEmpty" "0"
+		
+		//ComparePreviousMap LOAD TYPE ONLY:
+		//
+		//This is the criteria the last played map name (not including background maps) must follow for this background to show. Read background_menu_criteria.txt for more information.
+		//but long story short if the map name matches this criteria then it will choose this menu item. 
+		//If all criterias are wrong for each menu item then it will choose a menu data item with the 'IsDefault' key set to 1 (if all IsDefault keys are set to 0 then it will choose a random menu item).
+		"MapCriteria" "d2_*"
+	}
+	
+	//If you dont want the normal text to show (the text that says like "Portal" or "Half Life 2") but instead want an image to show like in portal 2
+	//then set this to 1
+	"UseImageLogo" "0"
+	
+	//if you do use texture logos then set this to the path to your material. here is just an example
+	"ImageLogoName" "vgui/example_logo"
+	
+	//if you do use texture logos then set these to be the x, y width and height
+	"ImageLogoX" "12"
+	"ImageLogoY" "115"
+	"ImageLogoWide" "355"
+	"ImageLogoTall" "160"
+	"ImageLogoColor" "255 255 255 100"
+}
+
+//use the 'modbase_bik_background_reset' command to reset the current background.
+//use the 'modbase_bik_background_play'  for going to a background (execute in console with no parameters for help)

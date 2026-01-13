@@ -2,7 +2,7 @@
 //
 // Purpose:		Pistol - hand gun
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #include "cbase.h"
@@ -49,6 +49,7 @@ public:
 	void	ItemPreFrame( void );
 	void	ItemBusyFrame( void );
 	void	PrimaryAttack( void );
+	void	SecondaryAttack( void ); // Addition.
 	void	AddViewKick( void );
 	void	DryFire( void );
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
@@ -370,4 +371,13 @@ void CWeaponPistol::AddViewKick( void )
 
 	//Add it to the view punch
 	pPlayer->ViewPunch( viewPunch );
+}
+
+// ------------------------
+// Addition for ironsights.
+// ------------------------
+void CWeaponPistol::SecondaryAttack(void)
+{
+	ToggleIronsights();
+	m_flNextSecondaryAttack = gpGlobals->curtime + 1.5f;
 }

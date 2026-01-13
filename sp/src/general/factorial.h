@@ -151,9 +151,9 @@ const char* cc_Factorials[] = {
 void ArrayFactorialFunction(const CCommand& args)
 {
 	const char* input = args.Arg(1); // String input.
-	int i = atoi(input);			 // If possible, convert to integer.
+	int i = Q_atoi(input);			 // If possible, convert to integer.
 
-	if (strcmp(input, "0") == 0)
+	if (Q_stricmp(input, "0") == 0)
 	{
 		Msg("%s\n", cc_Factorials[0]); // factorial 0 = 1.
 		return;
@@ -185,9 +185,9 @@ static ConCommand arrayfactorial("arrayfactorial", ArrayFactorialFunction, "Perf
 void VariableFactorialFunction(const CCommand& args)
 {
 	const char* input = args.Arg(1); // String input.
-	int i = atoi(input);			 // If possible, convert to integer.
+	int i = Q_atoi(input);			 // If possible, convert to integer.
 
-	if (strcmp(input, "0") == 0 || i == 1)
+	if (Q_stricmp(input, "0") == 0 || i == 1)
 	{
 		Msg("1\n"); // 0! = 1! = 1.
 		return;

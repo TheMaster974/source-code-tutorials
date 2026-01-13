@@ -24,9 +24,9 @@ $Project "fgdlib"
 	"fgdlib\fgdlib.vpc" [$WIN32]
 }
 
-// -------------------------------------------
-// It looks like this doesn't work on Linux :(
-// -------------------------------------------
+// -----------------------------------------------------------------------------------------------------
+// If you want to use this on Linux, you need to use the Docker method and remove the "$WIN32 &&" parts.
+// -----------------------------------------------------------------------------------------------------
 $Project "gamepadui"
 {
 	"game\gamepadui\gamepadui_hl2.vpc"	[$WIN32 && $HL2]

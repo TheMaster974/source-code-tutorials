@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Moved CGrenadeFrag class definition for flash grenade.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #include "cbase.h"
@@ -29,50 +29,9 @@ ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
-class CGrenadeFrag : public CBaseGrenade
-{
-	DECLARE_CLASS( CGrenadeFrag, CBaseGrenade );
-
-#if !defined( CLIENT_DLL )
-	DECLARE_DATADESC();
-#endif
-					
-	~CGrenadeFrag( void );
-
-public:
-	void	Spawn( void );
-	void	OnRestore( void );
-	void	Precache( void );
-	bool	CreateVPhysics( void );
-	void	CreateEffects( void );
-	void	SetTimer( float detonateDelay, float warnDelay );
-	void	SetVelocity( const Vector &velocity, const AngularImpulse &angVelocity );
-	int		OnTakeDamage( const CTakeDamageInfo &inputInfo );
-	void	BlipSound() { EmitSound( "Grenade.Blip" ); }
-	void	DelayThink();
-	void	VPhysicsUpdate( IPhysicsObject *pPhysics );
-	void	OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t reason );
-	void	SetCombineSpawned( bool combineSpawned ) { m_combineSpawned = combineSpawned; }
-	bool	IsCombineSpawned( void ) const { return m_combineSpawned; }
-	void	SetPunted( bool punt ) { m_punted = punt; }
-	bool	WasPunted( void ) const { return m_punted; }
-
-	// this function only used in episodic.
-#if defined(HL2_EPISODIC) && 0 // FIXME: HandleInteraction() is no longer called now that base grenade derives from CBaseAnimating
-	bool	HandleInteraction(int interactionType, void *data, CBaseCombatCharacter* sourceEnt);
-#endif 
-
-	void	InputSetTimer( inputdata_t &inputdata );
-
-protected:
-	CHandle<CSprite>		m_pMainGlow;
-	CHandle<CSpriteTrail>	m_pGlowTrail;
-
-	float	m_flNextBlipTime;
-	bool	m_inSolid;
-	bool	m_combineSpawned;
-	bool	m_punted;
-};
+// ---------------------------------------------------------
+// Moved class definition for CGrenadeFrag to grenade_frag.h
+// ---------------------------------------------------------
 
 LINK_ENTITY_TO_CLASS( npc_grenade_frag, CGrenadeFrag );
 

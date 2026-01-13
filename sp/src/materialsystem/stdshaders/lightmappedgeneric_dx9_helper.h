@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Adds Parallax Corrected Cubemap code.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================
 
 #ifndef LIGHTMAPPEDGENERIC_DX9_HELPER_H
@@ -87,6 +87,11 @@ struct LightmappedGeneric_DX9_Vars_t
 	int m_nOutlineEnd0;
 	int m_nOutlineEnd1;
 
+	// Additions.
+	int m_nEnvmapParallaxObb1;
+	int m_nEnvmapParallaxObb2;
+	int m_nEnvmapParallaxObb3;
+	int m_nEnvmapOrigin;
 };
 
 void InitParamsLightmappedGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, const char *pMaterialName, LightmappedGeneric_DX9_Vars_t &info );

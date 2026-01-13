@@ -22,6 +22,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar sk_allow_auto_reload; // Addition, see basehlcombatweapon_shared.cpp.
 extern ConVar sk_auto_reload_time;
 extern ConVar sk_plr_num_shotgun_pellets;
 
@@ -37,6 +38,7 @@ private:
 	bool	m_bNeedPump;		// When emptied completely
 	bool	m_bDelayedFire1;	// Fire primary when finished reloading
 	bool	m_bDelayedFire2;	// Fire secondary when finished reloading
+	bool	m_bShouldDoubleEject; // Addition, plays a special pump animation.
 
 public:
 	void	Precache( void );
@@ -99,6 +101,7 @@ BEGIN_DATADESC( CWeaponShotgun )
 	DEFINE_FIELD( m_bNeedPump, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bDelayedFire1, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bDelayedFire2, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bShouldDoubleEject, FIELD_BOOLEAN ), // Addition.
 
 END_DATADESC()
 
@@ -417,8 +420,20 @@ void CWeaponShotgun::Pump( void )
 	
 	WeaponSound( SPECIAL1 );
 
-	// Finish reload animation
-	SendWeaponAnim( ACT_SHOTGUN_PUMP );
+// -------------------------------------------------------------------------
+// Modification, play a special animation when the secondary attack is used.
+// -------------------------------------------------------------------------
+	if (!m_bShouldDoubleEject)
+	{
+		// Finish reload animation
+		SendWeaponAnim(ACT_SHOTGUN_PUMP);
+	}
+	else
+	{
+		// Play special pump animation, this is defined in v_shotgun.mdl.
+		SendWeaponAnim(ACT_SMG2_FIRE2);
+		m_bShouldDoubleEject = false;
+	}
 
 	pOwner->m_flNextAttack	= gpGlobals->curtime + SequenceDuration();
 	m_flNextPrimaryAttack	= gpGlobals->curtime + SequenceDuration();
@@ -545,6 +560,7 @@ void CWeaponShotgun::SecondaryAttack( void )
 	{
 		// pump so long as some rounds are left.
 		m_bNeedPump = true;
+		m_bShouldDoubleEject = true; // Addition.
 	}
 
 	m_iSecondaryAttacks++;
@@ -740,6 +756,8 @@ CWeaponShotgun::CWeaponShotgun( void )
 	m_fMaxRange1		= 500;
 	m_fMinRange2		= 0.0;
 	m_fMaxRange2		= 200;
+
+	m_bShouldDoubleEject = false; // Addition.
 }
 
 //-----------------------------------------------------------------------------
@@ -756,7 +774,8 @@ void CWeaponShotgun::ItemHolsterFrame( void )
 		return;
 
 	// If it's been longer than three seconds, reload
-	if ( ( gpGlobals->curtime - m_flHolsterTime ) > sk_auto_reload_time.GetFloat() )
+	if ( sk_allow_auto_reload.GetBool() && // Addition.
+		( gpGlobals->curtime - m_flHolsterTime ) > sk_auto_reload_time.GetFloat() )
 	{
 		// Reset the timer
 		m_flHolsterTime = gpGlobals->curtime;

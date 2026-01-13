@@ -2,7 +2,7 @@
 //
 // Purpose:		357 - hand gun
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #include "cbase.h"
@@ -35,6 +35,7 @@ public:
 	CWeapon357( void );
 
 	void	PrimaryAttack( void );
+	void	SecondaryAttack( void ); // Addition.
 	void	Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatCharacter *pOperator );
 
 	float	WeaponAutoAimScale()	{ return 0.6f; }
@@ -157,4 +158,13 @@ void CWeapon357::PrimaryAttack( void )
 		// HEV suit - indicate out of ammo condition
 		pPlayer->SetSuitUpdate( "!HEV_AMO0", FALSE, 0 ); 
 	}
+}
+
+// ------------------------
+// Addition for ironsights.
+// ------------------------
+void CWeapon357::SecondaryAttack(void)
+{
+	ToggleIronsights();
+	m_flNextSecondaryAttack = gpGlobals->curtime + 1.5f;
 }

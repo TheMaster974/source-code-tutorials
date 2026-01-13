@@ -52,6 +52,12 @@ public:
 	
 	bool	Reload( void );
 
+// ----------
+// Additions.
+// ----------
+	bool	CanDrop(void);
+	void	Drop(const Vector& velocity);
+
 private:
 	void	ThrowGrenade( CBasePlayer *pPlayer );
 	void	RollGrenade( CBasePlayer *pPlayer );
@@ -206,6 +212,14 @@ bool CWeaponHopwire::HasAnyAmmo( void )
 {
 	if ( m_hActiveHopWire != NULL )
 		return true;
+
+// ---------------------------------------------------------------------------------
+// Addition, this is to prevent an issue that stops the Hopwire from being used when
+// the player runs out of ammo, then obtains ammo. This seems to happen if the
+// Hopwire is the only weapon in the player's inventory for some reason!
+// ---------------------------------------------------------------------------------
+	if (BaseClass::HasAnyAmmo() && m_bRedraw)
+		m_bRedraw = false;
 
 	return BaseClass::HasAnyAmmo();
 }
@@ -505,4 +519,24 @@ void CWeaponHopwire::RollGrenade( CBasePlayer *pPlayer )
 	WeaponSound( SPECIAL1 );
 
 	m_bRedraw = true;
+}
+
+// -------------------------------------------------------------------------------
+// Addition, prevents the weapon from being dropped if there is an active Hopwire.
+// -------------------------------------------------------------------------------
+bool CWeaponHopwire::CanDrop(void)
+{
+	if (m_hActiveHopWire != NULL)
+		return false;
+
+	return BaseClass::CanDrop();
+}
+
+// -------------------------------------------------------------------------------------------------
+// Addition, this subtracts the correct amount of ammo from the player when this is picked up again.
+// -------------------------------------------------------------------------------------------------
+void CWeaponHopwire::Drop(const Vector& velocity)
+{
+	DecrementAmmo(GetOwner());
+	BaseClass::Drop(velocity);
 }

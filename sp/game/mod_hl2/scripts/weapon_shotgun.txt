@@ -73,6 +73,7 @@ WeaponData
 	}
 	IronSight
 	{
+		"enabled"	"1"
 		"forward"	"-10"
 		"right"		"-9"
 		"up"		"4.2"

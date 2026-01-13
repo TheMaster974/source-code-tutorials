@@ -219,6 +219,12 @@ public:
 
 	DECLARE_ACTTABLE();
 
+// -------------------------------------------------------------------------------------------------
+// Additions, this stops the weapon from being dropped/holstered when it is in the middle of firing.
+// -------------------------------------------------------------------------------------------------
+	bool CanDrop(void);
+	bool CanHolster(void);
+
 protected:
 	float	m_flChargeTime;
 	bool	m_bFired;
@@ -265,7 +271,7 @@ CWeaponCGuard::CWeaponCGuard( void )
 {
 	m_flNextPrimaryAttack	= gpGlobals->curtime;
 	m_flChargeTime			= gpGlobals->curtime;
-	m_bFired				= true;
+	m_bFired				= false; // true
 }
 
 //-----------------------------------------------------------------------------
@@ -314,7 +320,7 @@ void CWeaponCGuard::AlertTargets( void )
 void CWeaponCGuard::UpdateLasers( void )
 {
 	//Only update the lasers whilst charging
-	if ( ( m_flChargeTime < gpGlobals->curtime ) || ( m_bFired ) )
+	if ( ( m_flChargeTime < gpGlobals->curtime ) || ( !m_bFired ) ) // m_bFired
 		return;
 
 	Vector	start, end, v_forward, v_right, v_up;
@@ -327,9 +333,9 @@ void CWeaponCGuard::UpdateLasers( void )
 	pPlayer->GetVectors( &v_forward, &v_right, &v_up );
 
 	//Get the position of the laser
-	start = pPlayer->Weapon_ShootPosition( );
-
-	start += ( v_forward * 8.0f ) + ( v_right * 3.0f ) + ( v_up * -2.0f );
+	start = pPlayer->Weapon_ShootPosition();
+	
+	start += (v_forward * 8.0f) + (v_right * 3.0f) + (v_up * -2.0f);
 
 	end = start + ( v_forward * MAX_TRACE_LENGTH );
 
@@ -378,6 +384,12 @@ void CWeaponCGuard::PrimaryAttack( void )
 {
 	if ( m_flChargeTime >= gpGlobals->curtime )
 		return;
+
+// --------------------------------------
+// Don't attack again if we are charging!
+// --------------------------------------
+	if (m_bFired)
+		return;
 		
 	AlertTargets();
 
@@ -386,7 +398,7 @@ void CWeaponCGuard::PrimaryAttack( void )
 	UTIL_ScreenShake( GetAbsOrigin(), 10.0f, 100.0f, 2.0f, 128, SHAKE_START, false ); // Restored.
 
 	m_flChargeTime	= gpGlobals->curtime + 1.0f;
-	m_bFired		= false;
+	m_bFired		= true; // false
 }
 
 //-----------------------------------------------------------------------------
@@ -397,7 +409,7 @@ void CWeaponCGuard::ItemPostFrame( void )
 	//FIXME: UpdateLasers();
 	UpdateLasers(); // Restored. There, fixed! :)
 
-	if ( ( m_flChargeTime < gpGlobals->curtime ) && ( m_bFired == false ) )
+	if ( ( m_flChargeTime < gpGlobals->curtime ) && ( m_bFired == true ) ) // m_bFired == false
 	{
 		DelayedFire();
 	}
@@ -411,13 +423,16 @@ void CWeaponCGuard::ItemPostFrame( void )
 //-----------------------------------------------------------------------------
 void CWeaponCGuard::DelayedFire( void )
 {
+	m_bFired = false; // true
+
 	if ( m_flChargeTime >= gpGlobals->curtime )
 		return;
 
-	if ( m_bFired )
-		return;
-
-	m_bFired = true;
+// -------------------------------------------------------------------------------------
+// This has been removed so the charging functionality works more like the AR2 alt-fire.
+// -------------------------------------------------------------------------------------
+//	if ( m_bFired )
+//		return;
 
 	// Only the player fires this way so we can cast
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
@@ -489,6 +504,25 @@ void CWeaponCGuard::AddViewKick( void )
 	pPlayer->SnapEyeAngles( angles );
 	
 	pPlayer->ViewPunch( QAngle( random->RandomInt( -8, -12 ), random->RandomInt( -2, 2 ), random->RandomInt( -8, 8 ) ) );
+}
+
+// ---------------------------------------------------------------------------------------
+// Additions, this is to prevent weapon switching/dropping when charging up for an attack.
+// ---------------------------------------------------------------------------------------
+bool CWeaponCGuard::CanDrop(void)
+{
+	if (m_bFired)
+		return false;
+
+	return BaseClass::CanDrop();
+}
+
+bool CWeaponCGuard::CanHolster(void)
+{
+	if (m_bFired)
+		return false;
+
+	return BaseClass::CanHolster();
 }
 
 #endif

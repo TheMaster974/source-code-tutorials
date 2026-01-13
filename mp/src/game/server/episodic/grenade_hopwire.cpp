@@ -18,7 +18,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar hopwire_vortex( "hopwire_vortex", "0" );
+ConVar hopwire_vortex( "hopwire_vortex", "1" ); // Changed to be enabled by default.
 ConVar hopwire_trap( "hopwire_trap", "1" );
 ConVar hopwire_strider_kill_dist_h( "hopwire_strider_kill_dist_h", "300" );
 ConVar hopwire_strider_kill_dist_v( "hopwire_strider_kill_dist_v", "256" );
@@ -102,45 +102,54 @@ void CGravityVortexController::ConsumeEntity( CBaseEntity *pEnt )
 //-----------------------------------------------------------------------------
 void CGravityVortexController::PullPlayersInRange( void )
 {
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-	
-	Vector	vecForce = GetAbsOrigin() - pPlayer->WorldSpaceCenter();
-	float	dist = VectorNormalize( vecForce );
-	
-	// FIXME: Need a more deterministic method here
-	if ( dist < 128.0f )
+//	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
+// -------------------------------------
+// Iterate over all players in the game.
+// -------------------------------------
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
-		// Kill the player (with falling death sound and effects)
-		CTakeDamageInfo deathInfo( this, this, GetAbsOrigin(), GetAbsOrigin(), 200, DMG_FALL );
-		pPlayer->TakeDamage( deathInfo );
-		
-		if ( pPlayer->IsAlive() == false )
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (!pPlayer)
+			continue;
+
+		Vector	vecForce = GetAbsOrigin() - pPlayer->WorldSpaceCenter();
+		float	dist = VectorNormalize(vecForce);
+
+		// FIXME: Need a more deterministic method here
+		if (dist < 128.0f)
 		{
-			color32 black = { 0, 0, 0, 255 };
-			UTIL_ScreenFade( pPlayer, black, 0.1f, 0.0f, (FFADE_OUT|FFADE_STAYOUT) );
-			return;
+			// Kill the player (with falling death sound and effects)
+			CTakeDamageInfo deathInfo(this, this, GetAbsOrigin(), GetAbsOrigin(), 200, DMG_FALL);
+			pPlayer->TakeDamage(deathInfo);
+
+			if (pPlayer->IsAlive() == false)
+			{
+				color32 black = { 0, 0, 0, 255 };
+				UTIL_ScreenFade(pPlayer, black, 0.1f, 0.0f, (FFADE_OUT | FFADE_STAYOUT));
+				return;
+			}
 		}
-	}
 
-	// Must be within the radius
-	if ( dist > m_flRadius )
-		return;
+		// Must be within the radius
+		if (dist > m_flRadius)
+			return;
 
-	float mass = pPlayer->VPhysicsGetObject()->GetMass();
-	float playerForce = m_flStrength * 0.05f;
+		float mass = pPlayer->VPhysicsGetObject()->GetMass();
+		float playerForce = m_flStrength * 0.05f;
 
-	// Find the pull force
-	// NOTE: We might want to make this non-linear to give more of a "grace distance"
-	vecForce *= ( 1.0f - ( dist / m_flRadius ) ) * playerForce * mass;
-	vecForce[2] *= 0.025f;
-	
-	pPlayer->SetBaseVelocity( vecForce );
-	pPlayer->AddFlag( FL_BASEVELOCITY );
-	
-	// Make sure the player moves
-	if ( vecForce.z > 0 && ( pPlayer->GetFlags() & FL_ONGROUND) )
-	{
-		pPlayer->SetGroundEntity( NULL );
+		// Find the pull force
+		// NOTE: We might want to make this non-linear to give more of a "grace distance"
+		vecForce *= (1.0f - (dist / m_flRadius)) * playerForce * mass;
+		vecForce[2] *= 0.025f;
+
+		pPlayer->SetBaseVelocity(vecForce);
+		pPlayer->AddFlag(FL_BASEVELOCITY);
+
+		// Make sure the player moves
+		if (vecForce.z > 0 && (pPlayer->GetFlags() & FL_ONGROUND))
+		{
+			pPlayer->SetGroundEntity(NULL);
+		}
 	}
 }
 
@@ -153,12 +162,19 @@ void CGravityVortexController::PullPlayersInRange( void )
 bool CGravityVortexController::KillNPCInRange( CBaseEntity *pVictim, IPhysicsObject **pPhysObj )
 {
 	CBaseCombatCharacter *pBCC = pVictim->MyCombatCharacterPointer();
+// ------------------------------------------------------------------------------------------------------------------
+// Apparently, this code causes a game crash now with player ragdolls! The fix is to return here if pBCC is a player.
+// ------------------------------------------------------------------------------------------------------------------
+	if (pBCC != NULL && pBCC->IsPlayer())
+		return false;
 
 	// See if we can ragdoll
 	if ( pBCC != NULL && pBCC->CanBecomeRagdoll() )
 	{
-		// Don't bother with striders
-		if ( FClassnameIs( pBCC, "npc_strider" ) )
+// --------------------------------------------------
+// Don't bother with striders, gunships or dropships!
+// --------------------------------------------------
+		if (FClassnameIs(pBCC, "npc_strider") || FClassnameIs(pBCC, "npc_combinedropship") || FClassnameIs(pBCC, "npc_combinegunship"))
 			return false;
 
 		// TODO: Make this an interaction between the NPC and the vortex
@@ -260,10 +276,16 @@ void CGravityVortexController::PullThink( void )
 		float	dist = VectorNormalize( vecForce );
 		
 		// FIXME: Need a more deterministic method here
-		if ( dist < 48.0f )
+		if (dist < 48.0f)
 		{
-			ConsumeEntity( pEnts[i] );
-			continue;
+// --------------------------------------------------------
+// Don't consume players, as this can lead to game crashes!
+// --------------------------------------------------------
+			if (!pEnts[i]->IsPlayer())
+			{
+				ConsumeEntity(pEnts[i]);
+				continue;
+			}
 		}
 
 		// Must be within the radius
@@ -289,7 +311,12 @@ void CGravityVortexController::PullThink( void )
 	else
 	{
 		//Msg( "Consumed %.2f kilograms\n", m_flMass );
-		//CreateDenseBall();
+// --------------------------------------------------------------------------------------------------------------------------------------------------
+// If you choose to allow the paint can model to spawn once the Hopwire expires, be warned that the game can crash if it didn't consume anything!
+// This addition prevents the model from spawning if nothing was consumed i.e. m_flMass = 0. Thanks to EpicplayerBlueShift for telling me about this!
+// --------------------------------------------------------------------------------------------------------------------------------------------------
+//		if (m_flMass > 0.0f)
+//			CreateDenseBall();
 	}
 }
 
@@ -493,11 +520,6 @@ void CGrenadeHopwire::CombatThink( void )
 	//EmitSound("NPC_Strider.Shoot");
 	//EmitSound("d3_citadel.weapon_zapper_beam_loop2");
 
-	// Quick screen flash
-	CBasePlayer *pPlayer = ToBasePlayer( GetThrower() );
-	color32 white = { 255,255,255,255 };
-	UTIL_ScreenFade( pPlayer, white, 0.2f, 0.0f, FFADE_IN );
-
 	// Create the vortex controller to pull entities towards us
 	if ( hopwire_vortex.GetBool() )
 	{
@@ -517,6 +539,27 @@ void CGrenadeHopwire::CombatThink( void )
 		// Remove us immediately
 		SetThink( &CBaseEntity::SUB_Remove );
 		SetNextThink( gpGlobals->curtime + 0.1f );
+	}
+
+// ------------------------------------------------------------------
+// Quick screen flash, modified to affect all players.
+// Thanks to Vajdani for telling me to use continue instead of break!
+// ------------------------------------------------------------------
+	color32 white = { 255,255,255,255 };
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (!pPlayer)
+			continue;
+
+// ----------------------------------------------------------------
+// This has been changed slightly, now the screen flash only occurs
+// when the Hopwire detonation is in the player's FOV and LOS.
+// ----------------------------------------------------------------
+		if (!pPlayer->IsInFieldOfView(GetAbsOrigin()) || !pPlayer->IsLineOfSightClear(this))
+			continue;
+
+		UTIL_ScreenFade(pPlayer, white, 0.2f, 0.0f, FFADE_IN);
 	}
 }
 

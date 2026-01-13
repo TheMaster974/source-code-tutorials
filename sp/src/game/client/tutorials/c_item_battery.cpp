@@ -22,17 +22,12 @@ public:
 
 	void OnDataChanged(DataUpdateType_t updateType); // Called whenever data is changed.
 	void ClientThink(void); // Think function for the Client.
-
-private:
-	Vector batteryPos; // Position for the dynamic light to be created.
 };
 
 // ----------------------------
 // Add a Clientclass like this.
 // ----------------------------
 IMPLEMENT_CLIENTCLASS_DT(C_ItemBattery, DT_ItemBattery, CItemBattery)
-// You can easily receive information from the Server like this.
-RecvPropVector(RECVINFO_NAME(batteryPos, batteryPos)),
 END_RECV_TABLE()
 
 void C_ItemBattery::OnDataChanged(DataUpdateType_t updateType)
@@ -44,7 +39,7 @@ void C_ItemBattery::OnDataChanged(DataUpdateType_t updateType)
 void C_ItemBattery::ClientThink(void)
 {
 	dlight_t* dl = effects->CL_AllocDlight(index); // Create a dynamic light.
-	dl->origin = batteryPos; // Position.
+	dl->origin = GetAbsOrigin(); // Position, replaces batteryPos.
 	dl->color.r = 16; // Red.
 	dl->color.g = 252; // Green.
 	dl->color.b = 248; // Blue.

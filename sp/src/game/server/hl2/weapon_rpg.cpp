@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Subtracts the right amount of ammo if the player drops this weapon.
 //
 //=============================================================================//
 
@@ -1905,7 +1905,10 @@ void CWeaponRPG::ToggleGuiding( void )
 void CWeaponRPG::Drop( const Vector &vecVelocity )
 {
 	StopGuiding();
-
+// --------------------------------------------------------------------------------------------------
+// Addition, make it so that if the player drops this weapon, the right amount of ammo is subtracted.
+// --------------------------------------------------------------------------------------------------
+	DecrementAmmo(GetOwner());
 	BaseClass::Drop( vecVelocity );
 }
 

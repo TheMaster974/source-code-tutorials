@@ -181,6 +181,7 @@ public:
 
 	virtual void			Equip( CBaseCombatCharacter *pOwner );
 	virtual void			Drop( const Vector &vecVelocity );
+	virtual bool			CanDrop(void) { return TRUE; } // Addition.
 
 	virtual	int				UpdateClientData( CBasePlayer *pPlayer );
 
@@ -396,12 +397,17 @@ public:
 // ----------
 // Additions.
 // ----------
+#ifndef CLIENT_DLL
+	void OnRestore(void);
+#endif
+
 	Vector GetIronsightPositionOffset(void) const;
 	QAngle GetIronsightAngleOffset(void) const;
 	float GetIronsightFOVOffset(void) const;
 
 	// Enabled by default, however we will check which weapons should be ironsighted elsewhere.
-	virtual bool HasIronsights(void) { return true; }
+//	virtual bool HasIronsights(void) { return true; }
+	bool CanUseIronsights(void) const; // A more appropriate check to see if a weapon should be ironsighted.
 	bool IsIronsighted(void);
 	void ToggleIronsights(void);
 	void EnableIronsights(void);

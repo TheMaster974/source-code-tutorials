@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 // $Log: $
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #pragma warning( disable : 4800  )  // disable forcing int to bool performance warning
@@ -55,6 +55,8 @@
 #include "replay/ireplaysystem.h"
 #include "replay/ienginereplay.h"
 #endif
+
+#include "tutorials/BikBackground.h" // Addition.
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -186,6 +188,7 @@ CBaseViewport::CBaseViewport() : vgui::EditablePanel( NULL, "CBaseViewport")
 	}
 
 	m_OldSize[ 0 ] = m_OldSize[ 1 ] = -1;
+	m_pMainMenuPanel = NULL; // Addition.
 }
 
 //-----------------------------------------------------------------------------
@@ -220,6 +223,15 @@ void CBaseViewport::OnScreenSizeChanged(int iOldWide, int iOldTall)
 	if ( bSpecGuiWasVisible )
 	{
 		ShowPanel( PANEL_SPECGUI, true );
+	}
+
+// ----------
+// Additions.
+// ----------
+	if (m_pMainMenuPanel)
+	{
+		m_pMainMenuPanel->m_bInit = false;
+		m_pMainMenuPanel->ApplySchemeSettings(NULL);
 	}
 }
 
@@ -470,6 +482,15 @@ void CBaseViewport::RemoveAllPanels( void)
 	m_Panels.Purge();
 	m_pActivePanel = NULL;
 	m_pLastActivePanel = NULL;
+
+// ----------
+// Additions.
+// ----------
+	if (m_pMainMenuPanel)
+	{
+		m_pMainMenuPanel->MarkForDeletion();
+		m_pMainMenuPanel = NULL;
+	}
 }
 
 CBaseViewport::~CBaseViewport()
@@ -486,6 +507,14 @@ CBaseViewport::~CBaseViewport()
 	RemoveAllPanels();
 
 	gameeventmanager->RemoveListener( this );
+
+// ----------
+// Additions.
+// ----------
+	if (!m_bHasParent && m_pMainMenuPanel)
+		m_pMainMenuPanel->MarkForDeletion();
+
+	m_pMainMenuPanel = NULL;
 }
 
 
@@ -507,6 +536,17 @@ void CBaseViewport::Start( IGameUIFuncs *pGameUIFuncs, IGameEventManager2 * pGam
 	m_GameEventManager->AddListener( this, "game_newmap", false );
 	
 	m_bInitialized = true;
+
+// ----------
+// Additions.
+// ----------
+	DeleteBIKMenu();
+#ifndef GAMEPADUI
+	InitializeBIKMenu();
+#else
+	extern const bool IsSteamDeck();
+	InitializeBIKMenu(!IsSteamDeck());
+#endif
 }
 
 /*
@@ -717,5 +757,48 @@ void CBaseViewport::Paint()
 		vgui::surface()->DrawSetColor( 255, 0, 0, 255 );
 		vgui::surface()->DrawLine( size, 0, size, size );
 		vgui::surface()->DrawLine( 0, size, size, size );
+	}
+}
+
+// ----------
+// Additions.
+// ----------
+
+// Starts the main menu video if the ModBase_BikMenu panel is valid.
+void CBaseViewport::StartMainMenuVideo()
+{
+	if (m_pMainMenuPanel && g_PModBase_BikBackground_bUse)
+	{
+		m_pMainMenuPanel->StartVideo();
+		BikBackgroundDebugMsg("Starting main menu video!\n");
+	}
+}
+
+// Stops the main menu video if the ModBase_BikMenu panel is valid.
+void CBaseViewport::StopMainMenuVideo()
+{
+	if (m_pMainMenuPanel && g_PModBase_BikBackground_bUse)
+		m_pMainMenuPanel->StopVideo();
+}
+
+// Deletes the main menu video if it exists.
+void CBaseViewport::DeleteBIKMenu()
+{
+	if (m_pMainMenuPanel)
+		delete m_pMainMenuPanel;
+
+	m_pMainMenuPanel = NULL;
+}
+
+// Creates the main menu video and plays it if bPlay = true.
+void CBaseViewport::InitializeBIKMenu(bool bPlay)
+{
+	if (g_PModBase_BikBackground_bUse)
+	{
+		m_pMainMenuPanel = new ModBase_BikMenu(NULL, NULL);
+		m_pMainMenuPanel->SetVisible(false);
+
+		if (bPlay)
+			m_pMainMenuPanel->StartVideo();
 	}
 }

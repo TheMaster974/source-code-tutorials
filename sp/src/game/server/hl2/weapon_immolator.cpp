@@ -53,6 +53,13 @@ public:
 //	bool IsImmolating() { return m_flBurnRadius != 0.0; }
 	bool IsImmolating() { return isActive; }
 
+// ----------------------------------------------------------------------
+// Additions, these are to fix issues when switching/dropping the weapon.
+// ----------------------------------------------------------------------
+	bool	Holster(CBaseCombatWeapon* pSwitchingTo);
+	void	Drop(const Vector& vecVelocity);
+	void	Equip(CBaseCombatCharacter* pOwner);
+
 	DECLARE_ACTTABLE();
 	DECLARE_DATADESC();
 
@@ -356,6 +363,13 @@ void CWeaponImmolator::Update()
 	}
 }
 
+// -----------------------------------------------------------------
+// Set these as static variables, so they only get initialized once.
+// Moved out of ItemPostFrame so Equip/Drop/Holster can access them.
+// -----------------------------------------------------------------
+static bool isCurrentlyFiring = false; // Are we currently firing?
+static float m_flNextAttackTime = 0.0f; // What is the next attack time?
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -367,12 +381,6 @@ void CWeaponImmolator::ItemPostFrame( void )
 	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
 	if (!pPlayer)
 		return;
-
-// -----------------------------------------------------------------
-// Set these as static variables, so they only get initialized once.
-// -----------------------------------------------------------------
-	static bool isCurrentlyFiring = false; // Are we currently firing?
-	static float m_flNextAttackTime = 0.0f; // What is the next attack time?
 
 // -----------------------------------------------------------
 // If we have no ammo, don't allow the Immolator to be usable.
@@ -466,4 +474,30 @@ void CWeaponImmolator::ImmolationDamage( const CTakeDamageInfo &info, const Vect
 			pBCC->Ignite( random->RandomFloat( 15, 20 ) );
 		}
 	}
+}
+
+// ----------
+// Additions.
+// ----------
+bool CWeaponImmolator::Holster(CBaseCombatWeapon* pSwitchingTo)
+{
+	StopImmolating();
+	isCurrentlyFiring = false;
+	m_flNextAttackTime = 0.0f;
+	return BaseClass::Holster(pSwitchingTo);
+}
+
+void CWeaponImmolator::Drop(const Vector& vecVelocity)
+{
+	StopImmolating();
+	isCurrentlyFiring = false;
+	m_flNextAttackTime = 0.0f;
+	BaseClass::Drop(vecVelocity);
+}
+
+void CWeaponImmolator::Equip(CBaseCombatCharacter* pOwner)
+{
+	isCurrentlyFiring = false;
+	m_flNextAttackTime = 0.0f;
+	BaseClass::Equip(pOwner);
 }

@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: Fixed broken VGUI screens.
+// Purpose: Fixed broken VGUI screens. Adds pause menu music, if you want that!
 //
 // $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
@@ -11,6 +11,7 @@
 #include "c_ai_basenpc.h"
 #include "in_buttons.h"
 #include "collisionutils.h"
+#include "engine/ienginesound.h" // Addition.
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -632,6 +633,40 @@ bool C_BaseHLPlayer::CreateMove( float flInputSampleTime, CUserCmd *pCmd, bool b
 	{
 		PerformClientSideObstacleAvoidance( TICK_INTERVAL, pCmd );
 		PerformClientSideNPCSpeedModifiers( TICK_INTERVAL, pCmd );
+	}
+
+// ----------------------------------------------------------------------
+// Pause Menu Music, replace music/hl2_song30.mp3 with whatever you want!
+// ----------------------------------------------------------------------
+	static bool playMusic = false; // Has the music started to play?
+	static int musicGuid = 0; // ID associated with the pause menu music.
+
+// --------------------------------------------------------------------------
+// Play music when the game is paused, stop music when the game is unpaused.
+// Thanks to notgaben for commenting about potential main menu music overlap! 
+// --------------------------------------------------------------------------
+	if (engine->IsPaused() && !engine->IsLevelMainMenuBackground())
+	{
+		if (!playMusic) // Play the music clip once!
+		{
+			// Uncomment if you want pause menu music!
+//			enginesound->PrecacheSound("music/hl2_song30.mp3", true); // Precache music to play.
+//			enginesound->EmitAmbientSound("music/hl2_song30.mp3", 1.0f); // Play the music.
+//			musicGuid = enginesound->GetGuidForLastSoundEmitted(); // Obtain ID for the music.
+			playMusic = true;
+		}
+	}
+	else // Stop the music!
+	{
+// -------------------------------------------------------------------
+// If the ID is valid (non-zero), this will stop the pause menu music!
+// -------------------------------------------------------------------
+		// Uncomment if you want pause menu music!
+//		if (musicGuid != 0)
+//			enginesound->StopSoundByGuid(musicGuid);
+
+		playMusic = false; // Reset so the pause menu music can be played again.
+		musicGuid = 0; // Reset so the ID can be found correctly.
 	}
 
 	return bResult;

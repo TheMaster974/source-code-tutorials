@@ -207,6 +207,14 @@ bool CWeaponHopwire::HasAnyAmmo( void )
 	if ( m_hActiveHopWire != NULL )
 		return true;
 
+// ---------------------------------------------------------------------------------
+// Addition, this is to prevent an issue that stops the Hopwire from being used when
+// the player runs out of ammo, then obtains ammo. This seems to happen if the
+// Hopwire is the only weapon in the player's inventory for some reason!
+// ---------------------------------------------------------------------------------
+	if (BaseClass::HasAnyAmmo() && m_bRedraw)
+		m_bRedraw = false;
+
 	return BaseClass::HasAnyAmmo();
 }
 

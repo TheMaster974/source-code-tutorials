@@ -1,7 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Adds cinematic/claustrophobic camera. Thanks to WadDelZ for the code!
-//
+//			Also adds dynamic sky feature.
+// 
 //===========================================================================//
 
 #if !defined( VIEWRENDER_H )
@@ -429,6 +430,8 @@ public:
 	{
 		m_UnderWaterOverlayMaterial.Init( pMaterial );
 	}
+
+	void DrawSky(const CViewSetup& view); // Addition.
 private:
 	int				m_BuildWorldListsNumber;
 
@@ -493,6 +496,7 @@ private:
 	CMaterialReference	m_ModulateSingleColor;
 	CMaterialReference	m_ScreenOverlayMaterial;
 	CMaterialReference m_UnderWaterOverlayMaterial;
+	CMaterialReference m_SkydomeMaterial; // Addition.
 
 	Vector			m_vecLastFacing;
 	float			m_flCheapWaterStartDistance;

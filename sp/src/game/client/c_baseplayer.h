@@ -206,11 +206,11 @@ public:
 	float						MaxSpeed() const		{ return m_flMaxspeed; }
 
 	// Should this object cast shadows?
-	virtual ShadowType_t		ShadowCastType() { return SHADOWS_NONE; }
+	virtual ShadowType_t		ShadowCastType() { return SHADOWS_RENDER_TO_TEXTURE_DYNAMIC; } // return SHADOWS_NONE;
 
 	virtual bool				ShouldReceiveProjectedTextures( int flags )
 	{
-		return false;
+		return true; // return false;
 	}
 
 
@@ -445,6 +445,9 @@ public:
 	float			m_flConstraintRadius;
 	float			m_flConstraintWidth;
 	float			m_flConstraintSpeedFactor;
+
+	// Addition from Mapbase.
+	bool			m_bDrawPlayerModelExternally;
 
 protected:
 

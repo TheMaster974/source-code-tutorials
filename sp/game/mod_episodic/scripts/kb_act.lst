@@ -29,6 +29,7 @@
 "invprev"				"#Valve_Previous_Weapon"
 "lastinv"				"#Valve_Last_Weapon_Used"
 "toggle_ironsight"		"#Mod_Toggle_Ironsight"
+"DropPrimary"			"#Mod_Drop_Weapon"
 "blank"			"=========================="
 "blank"			"#Valve_Miscellaneous_Title"
 "blank"			"=========================="

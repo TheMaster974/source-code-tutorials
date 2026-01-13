@@ -1,0 +1,11 @@
+//This default screen is used when proper map related one can't be found. 
+UnlitGeneric
+{
+	$basetexture console/background02_widescreen
+	$additive 0
+	$vertexcolor 1
+	$vertexalpha 1
+	$ignorez 1
+	$no_fullbright 1
+	$nolod 1
+}

@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Adds ConVar to enable/disable auto reloading.
 //
 //=============================================================================//
 
@@ -47,6 +47,12 @@ END_DATADESC()
 BEGIN_PREDICTION_DATA( CBaseHLCombatWeapon )
 END_PREDICTION_DATA()
 
+// ---------------------------------------------------------------------
+// Addition, this ConVar determines if auto reloading should be enabled.
+// ---------------------------------------------------------------------
+ConVar sk_allow_auto_reload("sk_allow_auto_reload", "1", FCVAR_REPLICATED,
+	"Allows weapons to be reloaded automatically after being swapped out.");
+
 ConVar sk_auto_reload_time( "sk_auto_reload_time", "3", FCVAR_REPLICATED );
 
 //-----------------------------------------------------------------------------
@@ -65,7 +71,8 @@ void CBaseHLCombatWeapon::ItemHolsterFrame( void )
 		return;
 
 	// If it's been longer than three seconds, reload
-	if ( ( gpGlobals->curtime - m_flHolsterTime ) > sk_auto_reload_time.GetFloat() )
+	if ( sk_allow_auto_reload.GetBool() && // Addition.
+		( gpGlobals->curtime - m_flHolsterTime ) > sk_auto_reload_time.GetFloat() )
 	{
 		// Just load the clip with no animations
 		FinishReload();

@@ -2,7 +2,7 @@
 //
 // Purpose: Client side implementation of CBaseCombatWeapon.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 #include "cbase.h"
 #include "history_resource.h"
@@ -16,6 +16,9 @@
 #include "tier1/KeyValues.h"
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
+
+// Addition from Mapbase.
+#include "viewrender.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -83,7 +86,27 @@ static inline bool ShouldDrawLocalPlayerViewModel( void )
 #if defined( PORTAL )
 	return false;
 #else
-	return !C_BasePlayer::ShouldDrawLocalPlayer();
+// ---------------------------------------------------------------
+// This was taken from Mapbase, I don't know if this is necessary.
+// We shouldn't draw the viewmodel externally.
+// ---------------------------------------------------------------
+	C_BasePlayer* localplayer = C_BasePlayer::GetLocalPlayer();
+	if (localplayer)
+	{
+		if (localplayer->m_bDrawPlayerModelExternally)
+		{
+			// If this isn't the main view, draw the weapon.
+			view_id_t viewID = CurrentViewID();
+			if (viewID != VIEW_MAIN && viewID != VIEW_INTRO_CAMERA)
+				return false;
+		}
+
+		// Since we already have the local player, check its own ShouldDrawThisPlayer() to avoid extra checks
+		return !localplayer->ShouldDrawThisPlayer();
+	}
+	else
+		return false;
+//	return !C_BasePlayer::ShouldDrawLocalPlayer();
 #endif
 }
 
@@ -432,6 +455,12 @@ bool C_BaseCombatWeapon::ShouldDraw( void )
 		if ( !ShouldDrawLocalPlayerViewModel() )
 			return true;
 
+// ----------------------
+// Addition from Mapbase.
+// ----------------------
+		if (pLocalPlayer->m_bDrawPlayerModelExternally)
+			return true;
+
 		// don't draw active weapon if not in some kind of 3rd person mode, the viewmodel will do that
 		return false;
 	}
@@ -477,6 +506,34 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 
 	// check if local player chases owner of this weapon in first person
 	C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
+
+// ---------------------------------------------------------
+// Addition from Mapbase, I don't know if this is necessary.
+// ---------------------------------------------------------
+	if (localplayer && localplayer->m_bDrawPlayerModelExternally)
+	{
+		// If this isn't the main view, draw the weapon.
+		view_id_t viewID = CurrentViewID();
+		if ((!localplayer->InFirstPersonView() || (viewID != VIEW_MAIN && viewID != VIEW_INTRO_CAMERA)) && (viewID != VIEW_SHADOW_DEPTH_TEXTURE || !localplayer->IsEffectActive(EF_DIMLIGHT)))
+		{
+			// TODO: Is this inefficient?
+			int nModelIndex = GetModelIndex();
+			int nWorldModelIndex = GetWorldModelIndex();
+			if (nModelIndex != nWorldModelIndex)
+			{
+				SetModelIndex(nWorldModelIndex);
+			}
+
+			int iDraw = BaseClass::DrawModel(flags);
+
+			if (nModelIndex != nWorldModelIndex)
+			{
+				SetModelIndex(nModelIndex);
+			}
+
+			return iDraw;
+		}
+	}
 
 	if ( localplayer && localplayer->IsObserver() && GetOwner() )
 	{

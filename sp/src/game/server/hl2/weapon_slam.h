@@ -70,7 +70,14 @@ public:
 	void				SatchelThrow( void );
 	bool				Deploy( void );
 	bool				Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
-	bool				HasAnyAmmo(void); // Addition.
+
+// ----------
+// Additions.
+// ----------
+	bool				HasAnyAmmo(void);
+	void				DecrementAmmo(CBaseCombatCharacter* pOwner);
+	void				Drop(const Vector& velocity);
+	void				Event_Killed(const CTakeDamageInfo& info);
 
 	CWeapon_SLAM();
 

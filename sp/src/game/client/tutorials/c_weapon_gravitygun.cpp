@@ -36,7 +36,7 @@ public:
 	void			Update( C_BaseEntity *pOwner );
 
 	// IClientRenderable
-	virtual const Vector&			GetRenderOrigin( void ) { return m_worldPosition; }
+	virtual const Vector&			GetRenderOrigin( void ) { return m_targetPosition; } // return m_worldPosition;
 	virtual const QAngle&			GetRenderAngles( void ) { return vec3_angle; }
 	virtual bool					ShouldDraw( void ) { return true; }
 	virtual bool					IsTransparent( void ) { return true; }
@@ -44,8 +44,14 @@ public:
 	virtual int						DrawModel( int flags );
 
 	// Addition, this is needed for the beam drawing to work properly.
-	matrix3x4_t z;
-	const matrix3x4_t& RenderableToWorldTransform() { return z; }
+	// Improved to match how this function works in other files.
+	const matrix3x4_t& RenderableToWorldTransform()
+	{
+		static matrix3x4_t mat;
+		SetIdentityMatrix(mat);
+		PositionMatrix(GetRenderOrigin(), mat);
+		return mat;
+	}
 
 	// Returns the bounds relative to the origin (render bounds)
 	virtual void	GetRenderBounds( Vector& mins, Vector& maxs )

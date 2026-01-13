@@ -1,10 +1,10 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Allows custom shaders to be used by VBSP.
 //
 // $Workfile:     $
 // $Date:         $
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 // C callable material system interface for the utils.
@@ -59,6 +59,7 @@ void InitMaterialSystem( const char *materialBaseDirPath, CreateInterfaceFn file
 	LoadMaterialSystemInterface( fileSystemFactory );
 	MaterialSystem_Config_t config;
 	g_pMaterialSystem->OverrideConfig( config, false );
+	g_pMaterialSystem->ModInit(); // Addition.
 }
 
 void ShutdownMaterialSystem( )

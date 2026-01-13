@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Adds dynamic sky feature.
 //
 //===========================================================================//
 
@@ -303,7 +303,8 @@ void CViewRender::Init( void )
 
 	m_TranslucentSingleColor.Init( "debug/debugtranslucentsinglecolor", TEXTURE_GROUP_OTHER );
 	m_ModulateSingleColor.Init( "engine/modulatesinglecolor", TEXTURE_GROUP_OTHER );
-	
+	m_SkydomeMaterial.Init( "shaders/skydome", TEXTURE_GROUP_MODEL ); // Addition.
+
 	extern CMaterialReference g_material_WriteZ;
 	g_material_WriteZ.Init( "engine/writez", TEXTURE_GROUP_OTHER );
 

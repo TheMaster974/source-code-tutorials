@@ -1,0 +1,126 @@
+//-----------------------------------------------------------------------------------------
+// 
+// This file gives you information on how to use the ComparePreviousMap bik background load type for the background_menu.txt
+//
+// The background menu map criteria checker is a very advanced system. It compares the previously played map name with the "MapCriteria" value for each menu value item and if the criteria matches it uses that menu item. There are a few features in the criteria checker:
+//
+//  1. Wildcards '*' that can match any sequence of characters.
+//       - For example, if your string is "testchamber" and your criteria is "test*", it will match because '*' can represent any characters after "test".
+//       - You can also put '*' in the middle, like "test*er", and it will match "testchamber" because '*' matches "chamb".
+//       - Multiple '*' in a row are treated the same as a single '*', so "te**st*" is equivalent to "test*".
+//
+//  2. Special wildcards '[...]' that can match either:
+//       - Numeric ranges like [0-10] or [20-30] (NOTE that if you had, say testchmb_a_001 and you did testchmb_a_[0-10] as your criteria, it would work because it ignores the leading 0's)
+//       - Alphabetic ranges like [a-z] or [A-Z]
+//       - Multiple choices separated by '|' like [error|fail|1-5]
+// 
+//  3. Optional strings '{...}' to check for optional strings. The inside uses the same logic as inside the [] special wildcards.
+//       - So say i have testchmb01 as my string but i didnt know if the string was testchmb01 or testchmb_01 then i could do testchmb{_}01. That would allow an _ to be or not to be bettween testchmb and 01.
+// 
+//  4. Case sensitivity control with the 4th parameter
+// 
+//	5. Multiple checks. If you want to do multiple checks for 1 string, Then seperate each criteria with a |. For example i could do 'testchmb_a_15|escape_[0-2]' and it will see if the string matches either one of the criteria's
+//
+// Here are some examples of 'previous map names' (names of the map previously played) and 'criterias' (example MapCriteria values) that would cause the menu item to use it's background map:
+//
+//	previous map name:			criteria:
+//	 testchmb_a_09				 testchmb_a_09
+//	 testchmb_a_09				 test*
+//	 testchmb_a_09				 test*er_a_09
+//	 testchmb_a_09				 *_09
+//	 testchmb_a_09				 testchmb_a_[0-10]
+//	 testchmb_a_09				 testchmb_a_[00|01]
+//	 testchmb_a_09				 testchmb_a_[01-10]
+//	 testchmb_a_09				 testchmb_a_{0-10}
+//	 testchmb_a_09				 testchmb_{a-c}_09
+//	 testchmb_a_09				 testchmb_{a-c}_09
+//	 testchmb_a_09				 testchmb_a_[1-5]
+//	 testchmb_a_09				 testchmb_a{_01|_02}
+//	 testchmb09				 	 testchmb{_a_}[0-10]
+//	 testchamber_gamma			 testchamber_{alpha|beta|gamma}
+//
+// Now here are some examples of previous map names' (names of the map previously played) and 'criterias' (example MapCriteria values) that would cause the menu item to NOT use its background:
+//
+//	previous map name:			criteria:
+//	 testchamber				 testchambe
+//	 testchamber				 *ers
+//	 testchmb_a_01				 testchmb_a_[00|02]
+//	 testchmb_a_11				 testchmb_a_[0-10]
+//	 testchmb_d_1				 testchmb_{a-c}_1
+//	 testchmb_z_1				 testchmb_{a-c}_1
+//	 test_a_9					 test_a_{3-7}
+//	 test_a_00					 test_a_{1-5}
+//	 testa_6					 test[a-c]_[1-5]
+//	 testb_9					 test[a-c]_[1-5]
+//	 testdelta				 test_{alpha|beta|gamma}
+//	 test011					 test[1-10]
+//	 abc						 xyz*
+//	 51						 [1-50]
+//	 testA						 test[a-z]
+//
+// For example portal 2 would have
+
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act01"
+		
+		"music"
+		{
+			"music/portal_menu01.wav" "1.0"
+		}
+		
+		"IsDefault" "0"
+		"MapCriteria" "sp_a1_*"
+	}
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act02"
+		
+		"music"
+		{
+			"music/portal_menu02.wav" "1.0"
+		}
+		
+		"IsDefault" "0"
+		"MapCriteria" "sp_a2_*"
+	}
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act03"
+		
+		"music"
+		{
+			"music/portal_menu03.wav" "1.0"
+		}
+		
+		"IsDefault" "0"
+		"MapCriteria" "sp_a3_*"
+	}
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act04"
+		
+		"music"
+		{
+			"music/portal_menu04.wav" "1.0"
+		}
+		
+		"IsDefault" "0"
+		"MapCriteria" "sp_a4_*"
+	}
+	"MenuData"
+	{
+		"BackgroundVideoName" "media/menu_act05"
+		
+		"music"
+		{
+			"music/portal_menu05.wav" "1.0"
+		}
+		
+		"IsDefault" "0"
+		"MapCriteria" "sp_a5_*"
+	}
+
+	//for the bik background videos. it checks the act (sp_A*) and if the act is 1 it does the 1st menu. If its 2 it does the 2nd menu and so on
+
+//-----------------------------------------------------------------------------------------

@@ -11,6 +11,7 @@
 #include "ammodef.h"
 #include "eventlist.h"
 #include "npcevent.h"
+#include "explode.h" // Addition.
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -462,6 +463,12 @@ public:
 		Precache( );
 		SetModel( "models/items/ar2_grenade.mdl");
 		BaseClass::Spawn( );
+
+// ----------
+// Additions.
+// ----------
+		m_takedamage = DAMAGE_YES;
+		m_iHealth = 15;
 	}
 	void Precache( void )
 	{
@@ -478,6 +485,20 @@ public:
 			return true;
 		}
 		return false;
+	}
+// ---------
+// Addition.
+// ---------
+	void Event_Killed(const CTakeDamageInfo& info)
+	{
+		m_takedamage = DAMAGE_NO;
+
+		UTIL_ScreenShake(GetAbsOrigin(), 25.0, 150.0, 1.0, 750, SHAKE_START);
+
+		ExplosionCreate(GetAbsOrigin() + Vector(0, 0, 16), GetAbsAngles(), NULL, 50, 200,
+			SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
+
+		UTIL_Remove(this);
 	}
 };
 LINK_ENTITY_TO_CLASS(item_ar2_grenade, CItem_AR2_Grenade);
@@ -588,6 +609,48 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( item_ammo_ar2_altfire, CItem_AR2AltFireRound );
+
+// --------------------------
+// Addition for Physgun ammo.
+// --------------------------
+#define SIZE_AMMO_PHYSGUN_PELLET 1
+// ========================================================================
+// >> CItem_PhysgunPellet
+// ========================================================================
+class CItem_PhysgunPellet : public CItem
+{
+	DECLARE_CLASS(CItem_PhysgunPellet, CItem);
+
+	void Precache(void)
+	{
+// ------------------------------------------------------------------------
+// Make sure this model exists in your mod files if you plan on using this!
+// ------------------------------------------------------------------------
+		PrecacheModel("models/weapons/glueblob.mdl");
+	}
+
+	void Spawn(void)
+	{
+		Precache();
+		SetModel("models/weapons/glueblob.mdl");
+		BaseClass::Spawn();
+	}
+
+	bool MyTouch(CBasePlayer* pPlayer)
+	{
+		if (ITEM_GiveAmmo(pPlayer, SIZE_AMMO_PHYSGUN_PELLET, "Gravity"))
+		{
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO)
+			{
+				UTIL_Remove(this);
+			}
+			return true;
+		}
+		return false;
+	}
+};
+
+LINK_ENTITY_TO_CLASS(item_ammo_physgun_pellet, CItem_PhysgunPellet);
 
 // ==================================================================
 // Ammo crate which will supply infinite ammo of the specified type

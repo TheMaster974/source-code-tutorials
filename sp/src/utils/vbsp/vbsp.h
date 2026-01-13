@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Adds Parallax Corrected Cubemap code.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //
 //=============================================================================//
 
@@ -605,9 +605,11 @@ int FindTexInfo( const texinfo_t &searchTexInfo );
 // normals.c
 void SaveVertexNormals( void );
 
+extern char* g_pParallaxObbStrs[MAX_MAP_CUBEMAPSAMPLES]; // Addition.
+
 //=============================================================================
 // cubemap.cpp
-void Cubemap_InsertSample( const Vector& origin, int size );
+void Cubemap_InsertSample( const Vector& origin, int size, char *pParallaxObbStr ); // Adds char *pParallaxObbStr.
 void Cubemap_CreateDefaultCubemaps( void );
 void Cubemap_SaveBrushSides( const char *pSideListStr );
 void Cubemap_FixupBrushSidesMaterials( void );

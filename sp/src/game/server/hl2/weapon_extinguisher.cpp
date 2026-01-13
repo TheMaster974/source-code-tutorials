@@ -5,6 +5,8 @@
 //			particles folder and added to particles_manifest.txt. If the extinguish
 //			decal is too large, modify the extinguish.vmt file to change the
 //			$decalscale variable to be something like 0.125.
+//			Also, thanks to Mazdo for pointing out an issue with particles/sounds
+//			continuing to play when dropping or holstering this weapon!
 //
 // $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
@@ -58,6 +60,15 @@ public:
 	void	Event_Killed( const CTakeDamageInfo &info );
 	void	Equip( CBaseCombatCharacter *pOwner );
 
+// -------------------------------------------------------
+// Additions, thanks to Mazdo for pointing this out to me!
+// -------------------------------------------------------
+	bool	Holster(CBaseCombatWeapon* pSwitchingTo);
+	void	Drop(const Vector& vecVelocity);
+	void	DecrementAmmo(CBaseCombatCharacter* pOwner);
+	void	OnPickedUp(CBaseCombatCharacter* pOwner);
+	int		extinguisher_ammo_to_subtract; // This is to ensure the correct amount of ammo is subtracted when the weapon is dropped.
+
 protected:
 	
 	void	StartJet( void );
@@ -90,6 +101,7 @@ CWeaponExtinguisher::CWeaponExtinguisher( void )
 {
 //	m_pJet		= NULL;
 	isActive = false;
+	extinguisher_ammo_to_subtract = 0; // Addition.
 }
 
 //-----------------------------------------------------------------------------
@@ -160,8 +172,12 @@ void CWeaponExtinguisher::Event_Killed( const CTakeDamageInfo &info )
 	//Put out fire in a radius
 	FireSystem_ExtinguishInRadius( GetAbsOrigin(), fire_extinguisher_explode_radius.GetInt(), fire_extinguisher_explode_strength.GetFloat() );
 
-	SetThink( &CBaseEntity::SUB_Remove ); // Proper pointer.
-	SetNextThink( gpGlobals->curtime + 0.1f );
+// -------------------------------
+// Modified this section slightly.
+// -------------------------------
+//	SetThink( &CBaseEntity::SUB_Remove ); // Proper pointer.
+//	SetNextThink( gpGlobals->curtime + 0.1f );
+	UTIL_Remove(this);
 }
 
 //-----------------------------------------------------------------------------
@@ -275,6 +291,7 @@ void CWeaponExtinguisher::ItemPostFrame( void )
 		if (m_flNextAttackTime < gpGlobals->curtime)
 		{
 			pOwner->RemoveAmmo(1, m_iSecondaryAmmoType);
+			extinguisher_ammo_to_subtract += 1; // Addition.
 			//			m_flNextPrimaryAttack = gpGlobals->curtime + EXTINGUISHER_AMMO_RATE;
 			m_flNextAttackTime = gpGlobals->curtime + EXTINGUISHER_AMMO_RATE;
 		}
@@ -392,6 +409,43 @@ void CWeaponExtinguisher::ItemPostFrame( void )
 	}
 }
 
+// ---------------------------------------------------------------------------------------------
+// Additions, this is to stop the firing sound and particles when switching/dropping the weapon.
+// ---------------------------------------------------------------------------------------------
+bool CWeaponExtinguisher::Holster(CBaseCombatWeapon* pSwitchingTo)
+{
+	StopJet();
+	StopParticleEffects(ToBasePlayer(GetOwner())->GetViewModel());
+	StopWeaponSound(SINGLE);
+	return BaseClass::Holster(pSwitchingTo);
+}
+
+void CWeaponExtinguisher::Drop(const Vector& vecVelocity)
+{
+	StopJet();
+	StopParticleEffects(ToBasePlayer(GetOwner())->GetViewModel());
+	StopWeaponSound(SINGLE);
+	DecrementAmmo(GetOwner());
+	m_takedamage = DAMAGE_YES;
+	BaseClass::Drop(vecVelocity);
+}
+
+// This subtracts ammo when the weapon is dropped.
+void CWeaponExtinguisher::DecrementAmmo(CBaseCombatCharacter* pOwner)
+{
+	pOwner->RemoveAmmo(extinguisher_ammo_to_subtract, m_iSecondaryAmmoType);
+}
+
+// Subtract the right amount of ammo from the player when this weapon is picked up again.
+void CWeaponExtinguisher::OnPickedUp(CBaseCombatCharacter* pOwner)
+{
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+	if (!pPlayer)
+		return;
+	DecrementAmmo(pPlayer);
+	BaseClass::OnPickedUp(pOwner);
+}
+
 // --------------------------------------------------
 // This is an optional entity to include in your mod!
 // --------------------------------------------------
@@ -482,10 +536,21 @@ void CExtinguisherCharger::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, U
 
 	CBasePlayer	*pPlayer = ToBasePlayer( pActivator );
 
-	if ( pPlayer )
+// ----------------------------------------------------------------------------------------------------------
+// This section has been modified slightly, only regain ammo when the Fire Extinguisher is the active weapon.
+// TODO: Investigate this further to ensure appropriate functionality!
+// ----------------------------------------------------------------------------------------------------------
+	if (pPlayer)
 	{
-		//FIXME: Need a way to do this silently
-		pPlayer->GiveAmmo( 1, "extinguisher" );
+		CBaseCombatWeapon* pTestWeapon = pPlayer->Weapon_OwnsThisType("weapon_extinguisher");
+		CWeaponExtinguisher* pExtinguisher = dynamic_cast<CWeaponExtinguisher*>(pTestWeapon);
+
+		if (pExtinguisher)
+		{
+			//FIXME: Need a way to do this silently
+			pPlayer->GiveAmmo(1, "extinguisher");
+			pExtinguisher->extinguisher_ammo_to_subtract -= 1;
+		}
 	}
 }
 

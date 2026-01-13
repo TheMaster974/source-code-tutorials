@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose:
+// Purpose: Prevents the weapon from being dropped when charging the alt-fire.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #include "cbase.h"
@@ -133,6 +133,12 @@ void CWeaponAR2::Precache( void )
 //-----------------------------------------------------------------------------
 void CWeaponAR2::ItemPostFrame( void )
 {
+// --------------------------------------------------------------------------
+// Addition, this prevents the weapon from being used when switching weapons.
+// --------------------------------------------------------------------------
+	if (GetActivity() == ACT_VM_HOLSTER)
+		return;
+
 	// See if we need to fire off our secondary round
 	if ( m_bShotDelayed && gpGlobals->curtime > m_flDelayedFire )
 	{
@@ -509,4 +515,15 @@ const WeaponProficiencyInfo_t *CWeaponAR2::GetProficiencyValues()
 	COMPILE_TIME_ASSERT( ARRAYSIZE(proficiencyTable) == WEAPON_PROFICIENCY_PERFECT + 1);
 
 	return proficiencyTable;
+}
+
+// -------------------------------------------------------------------------------------
+// Addition, this stops the weapon from being dropped when charging the alt-fire attack.
+// -------------------------------------------------------------------------------------
+bool CWeaponAR2::CanDrop(void)
+{
+	if (m_bShotDelayed)
+		return false;
+
+	return BaseClass::CanDrop();
 }

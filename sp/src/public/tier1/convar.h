@@ -6,7 +6,7 @@
 // $Date:         $
 //
 //-----------------------------------------------------------------------------
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //===========================================================================//
 
 #ifndef CONVAR_H
@@ -136,7 +136,9 @@ public:
 	// Returns the DLL identifier
 	virtual CVarDLLIdentifier_t	GetDLLIdentifier() const;
 
-protected:
+// Modification, change this section from protected to public.
+//protected:
+public:
 	virtual void				Create( const char *pName, const char *pHelpString = 0, 
 									int flags = 0 );
 
@@ -283,7 +285,9 @@ public:
 	// Invoke the function
 	virtual void Dispatch( const CCommand &command );
 
-private:
+// Modification, change this section from private to public.
+//private:
+public:
 	// NOTE: To maintain backward compat, we have to be very careful:
 	// All public virtual methods must appear in the same order always
 	// since engine code will be calling into this code, which *does not match*

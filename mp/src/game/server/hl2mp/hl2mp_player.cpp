@@ -586,7 +586,20 @@ void CHL2MP_Player::PlayerDeathThink()
 void CHL2MP_Player::FireBullets ( const FireBulletsInfo_t &info )
 {
 	// Move other players back to history positions based on local player's lag
-	lagcompensation->StartLagCompensation( this, this->GetCurrentCommand() );
+// -----------------------------------------------------------------------------------------
+// This has been changed to fix a crash that occurs when trying to fire a burst fire weapon.
+// Thanks to WadDelZ and aeonakf for helping me out with these code changes!
+// TODO: Test to see if this works in a laggy environment!
+// -----------------------------------------------------------------------------------------
+	CUserCmd* cmd = GetCurrentCommand(); // Get the current user command.
+	if (cmd) // If the command is valid, start lag compensation.
+		lagcompensation->StartLagCompensation( this, cmd ); // this->GetCurrentCommand()
+	else // Otherwise, use the last user command for lag compensation.
+	{
+		const CUserCmd* lastCmd = GetLastUserCommand();
+		CUserCmd* newCmd = (CUserCmd*)lastCmd;
+		lagcompensation->StartLagCompensation(this, newCmd);
+	}
 
 	FireBulletsInfo_t modinfo = info;
 

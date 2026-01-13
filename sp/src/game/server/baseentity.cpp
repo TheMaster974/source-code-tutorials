@@ -1443,6 +1443,9 @@ void CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 	if ( !g_pGameRules )
 		return;
 
+	// Addition.
+	int prevhealth = GetHealth();
+
 	bool bHasPhysicsForceDamage = !g_pGameRules->Damage_NoPhysicsForce( inputInfo.GetDamageType() );
 	if ( bHasPhysicsForceDamage && inputInfo.GetDamageType() != DMG_GENERIC )
 	{
@@ -1501,6 +1504,29 @@ void CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 		//Msg("%s took %.2f Damage, at %.2f\n", GetClassname(), info.GetDamage(), gpGlobals->curtime );
 
 		OnTakeDamage( info );
+	}
+
+	CBasePlayer* pPlayer = ToBasePlayer(inputInfo.GetAttacker());
+	if (pPlayer && IsNPC() && prevhealth != GetHealth())
+	{
+		CSingleUserRecipientFilter filter(pPlayer);
+
+		Vector pos = inputInfo.GetDamagePosition(); // Get damage position.
+
+		// If too far away from this, use eye position - 25.
+		if (GetAbsOrigin().DistTo(pos) > 100)
+		{
+			pos = EyePosition();
+			pos.z -= 25;
+		}
+
+		// Write user message.
+		UserMessageBegin(filter, "ShowHitmarker");
+			WRITE_BYTE(1);
+			WRITE_BYTE(IsAlive());
+			WRITE_BYTE(prevhealth - Clamp<int>(GetHealth(), 0, GetMaxHealth()));
+			WRITE_VEC3COORD(pos);
+		MessageEnd();
 	}
 }
 

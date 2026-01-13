@@ -466,6 +466,9 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	KeyValues* pSights = pKeyValuesData->FindKey("IronSight");
 	if (pSights)
 	{
+		// 0 means the weapon can't use the ironsight feature, 1 means it can.
+		bCanUseIronsight = pSights->GetBool("enabled", false);
+
 		vecIronsightPosOffset.x = pSights->GetFloat("forward", 0.0f);
 		vecIronsightPosOffset.y = pSights->GetFloat("right", 0.0f);
 		vecIronsightPosOffset.z = pSights->GetFloat("up", 0.0f);
@@ -479,6 +482,7 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	else
 	{
 		// No ironsights.
+		bCanUseIronsight = false;
 		vecIronsightPosOffset = vec3_origin;
 		angIronsightAngOffset.Init();
 		flIronsightFOVOffset = 0.0f;

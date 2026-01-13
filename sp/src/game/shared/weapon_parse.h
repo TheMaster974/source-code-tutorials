@@ -129,6 +129,7 @@ public:
 	bool					bShowUsageHint;							// if true, then when you receive the weapon, show a hint about it
 
 // SERVER DLL - more like additions for the ironsights feature.
+	bool bCanUseIronsight;
 	Vector vecIronsightPosOffset;
 	QAngle angIronsightAngOffset;
 	float flIronsightFOVOffset;

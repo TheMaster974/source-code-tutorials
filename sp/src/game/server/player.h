@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: Fixed VGUI screens.
+// Purpose: Fixed VGUI screens and adds a weapon drop system.
 //
 //===========================================================================//
 
@@ -419,7 +419,7 @@ public:
 	virtual void			Weapon_SetLast( CBaseCombatWeapon *pWeapon );
 	virtual bool			Weapon_ShouldSetLast( CBaseCombatWeapon *pOldWeapon, CBaseCombatWeapon *pNewWeapon ) { return true; }
 	virtual bool			Weapon_ShouldSelectItem( CBaseCombatWeapon *pWeapon );
-	void					Weapon_DropSlot( int weaponSlot );
+	void					Weapon_DropSlot( int weaponSlot, int weaponPosition ); // Modification.
 	CBaseCombatWeapon		*Weapon_GetLast( void ) { return m_hLastWeapon.Get(); }
 
 	virtual void			OnMyWeaponFired( CBaseCombatWeapon *weapon );	// call this when this player fires a weapon to allow other systems to react
@@ -1097,6 +1097,10 @@ public:
 	float					m_flSideMove;
 	int						m_nNumCrateHudHints;
 
+	// Additions from Mapbase, I don't think these are strictly necessary.
+	bool					GetDrawPlayerModelExternally( void ) { return m_bDrawPlayerModelExternally; }
+	void					SetDrawPlayerModelExternally( bool bToggle ) { m_bDrawPlayerModelExternally.Set(bToggle); }
+
 private:
 
 	// Used in test code to teleport the player to random locations in the map.
@@ -1134,6 +1138,9 @@ private:
 
 	// Player name
 	char					m_szNetname[MAX_PLAYER_NAME_LENGTH];
+
+	// Addition from Mapbase.
+	CNetworkVar( bool, m_bDrawPlayerModelExternally );
 
 protected:
 	// HACK FOR TF2 Prediction

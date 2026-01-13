@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Stops zooming from happening under certain circumstances.
 //
 //=============================================================================//
 
@@ -595,6 +595,13 @@ void CWeaponCrossbow::CheckZoomToggle( void )
 //-----------------------------------------------------------------------------
 void CWeaponCrossbow::ItemBusyFrame( void )
 {
+// ------------------------------------------------------
+// Addition, this stops the player from being able to use
+// the zoom feature when switching to/from the Crossbow.
+// ------------------------------------------------------
+	if (GetActivity() == ACT_VM_HOLSTER || GetActivity() == ACT_VM_DRAW)
+		return;
+
 	// Allow zoom toggling even when we're reloading
 	CheckZoomToggle();
 }
@@ -604,6 +611,12 @@ void CWeaponCrossbow::ItemBusyFrame( void )
 //-----------------------------------------------------------------------------
 void CWeaponCrossbow::ItemPostFrame( void )
 {
+// -----------------------------------------------------------------------------
+// Addition, this prevents the zoom from happening when dropping a physics prop.
+// -----------------------------------------------------------------------------
+	if (GetActivity() == ACT_VM_HOLSTER)
+		return;
+
 	// Allow zoom toggling
 	CheckZoomToggle();
 

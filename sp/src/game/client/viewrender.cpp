@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: Responsible for drawing the scene. Thanks to WadDelZ for the code!
+// Purpose: Responsible for drawing the scene. Thanks to WadDelZ & Mapbase for the code!
 //
 //===========================================================================//
 
@@ -76,6 +76,8 @@
 
 // Projective textures
 #include "C_Env_Projected_Texture.h"
+
+#include "tutorials/c_env_skydome.h" // Addition.
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1154,6 +1156,98 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 	pRenderContext->PopMatrix();
 }
 
+// ---------------------------------
+// Addition for dynamic sky feature.
+// ---------------------------------
+void CViewRender::DrawSky(const CViewSetup& view)
+{
+	float flRadius = 32.0f;
+	int nTheta = 8;
+	int nPhi = 8;
+
+	CMatRenderContextPtr pRenderContext(materials);
+	pRenderContext->OverrideDepthEnable(true, false);
+
+	int nTriangles = 2 * nTheta * (nPhi - 1); // Two extra degenerate triangles per row (except the last one)
+	int nIndices = 2 * (nTheta + 1) * (nPhi - 1);
+
+	pRenderContext->Bind(m_SkydomeMaterial);
+
+	CMeshBuilder meshBuilder;
+	IMesh* pMesh = pRenderContext->GetDynamicMesh();
+
+	meshBuilder.Begin(pMesh, MATERIAL_TRIANGLE_STRIP, nTriangles, nIndices);
+
+	//
+	// Build the index buffer.
+	//
+	int i, j;
+	for (i = 0; i < nPhi; ++i)
+	{
+		for (j = 0; j < nTheta; ++j)
+		{
+			float u = j / (float)(nTheta - 1);
+			float v = i / (float)(nPhi - 1);
+			float theta = 2.0f * M_PI * u;
+			float phi = M_PI * v;
+
+			Vector vecPos;
+			vecPos.x = flRadius * sin(phi) * cos(theta);
+			vecPos.y = flRadius * sin(phi) * sin(theta);
+			vecPos.z = flRadius * cos(phi);
+
+			Vector vecNormal = vecPos;
+			VectorNormalize(vecNormal);
+
+			meshBuilder.Position3f(vecPos.x, vecPos.y, vecPos.z);
+			meshBuilder.AdvanceVertex();
+		}
+	}
+
+	//
+	// Emit the triangle strips.
+	//
+	int idx = 0;
+	for (i = nPhi - 2; i >= 0; --i)
+	{
+		for (j = nTheta - 1; j >= 0; --j)
+		{
+			idx = nTheta * i + j;
+
+			meshBuilder.Index(idx + nTheta);
+			meshBuilder.AdvanceIndex();
+
+			meshBuilder.Index(idx);
+			meshBuilder.AdvanceIndex();
+		}
+
+		//
+		// Emit a degenerate triangle to skip to the next row without
+		// a connecting triangle.
+		//
+		if (i < nPhi - 2)
+		{
+			meshBuilder.Index(idx);
+			meshBuilder.AdvanceIndex();
+
+			meshBuilder.Index(idx + nTheta + 1);
+			meshBuilder.AdvanceIndex();
+		}
+	}
+
+	pRenderContext->MatrixMode(MATERIAL_MODEL);
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+	pRenderContext->Translate(view.origin.x, view.origin.y, view.origin.z);
+
+	meshBuilder.End();
+	pMesh->Draw();
+
+	pRenderContext->MatrixMode(MATERIAL_MODEL);
+	pRenderContext->PopMatrix();
+
+	pRenderContext->OverrideDepthEnable(false, true);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -3571,6 +3665,16 @@ void CRendering3dView::DrawWorld( float waterZAdjust )
 		return;
 	}
 
+// ---------------------------------
+// Addition for dynamic sky feature.
+// ---------------------------------
+	if ((m_DrawFlags & DF_DRAWSKYBOX) && (g_pSkyDome && g_pSkyDome->IsDynamicSkyEnabled()))
+	{
+		m_DrawFlags &= ~DF_DRAWSKYBOX; // dont render engine sky, we have our own sky now
+
+		m_pMainView->DrawSky(*this);
+	}
+
 	unsigned long engineFlags = BuildEngineDrawWorldListFlags( m_DrawFlags );
 
 	render->DrawWorldLists( m_pWorldRenderList, engineFlags, waterZAdjust );
@@ -3881,6 +3985,22 @@ static inline void DrawOpaqueRenderable( IClientRenderable *pEnt, bool bTwoPass,
 		view->SetCurrentlyDrawingEntity( pEnt->GetIClientUnknown()->GetBaseEntity() );
 		pEnt->DrawModel( flags );
 		view->SetCurrentlyDrawingEntity( NULL );
+	}
+
+// ----------------------------------------------------------------------------------------
+// Additions, ensure decals on dynamic props get drawn when the flashlight is cast on them.
+// ----------------------------------------------------------------------------------------
+	C_BasePlayer* pPlayer = C_BasePlayer::GetLocalPlayer();
+	ConVar* r_flashlightfar = cvar->FindVar("r_flashlightfar");
+
+	if (pPlayer && pPlayer->IsEffectActive(EF_DIMLIGHT) &&
+		(pPlayer->GetAbsOrigin() - ((C_BaseEntity*)pEnt)->GetAbsOrigin()).Length()
+		< r_flashlightfar->GetFloat() && dynamic_cast<C_BaseEntity*>(pEnt))
+	{
+		float blend = render->GetBlend();
+		render->SetBlend(0);
+		pEnt->DrawModel(flags);
+		render->SetBlend(blend);
 	}
 }
 
@@ -6232,6 +6352,13 @@ void CReflectiveGlassView::Draw()
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CReflectiveGlassView::Draw" );
 
+// -----------------------------------------------------
+// Additions from Mapbase.
+// Store off view origin and angles and set the new view
+// -----------------------------------------------------
+	int nSaveViewID = CurrentViewID();
+	SetupCurrentView(origin, angles, VIEW_REFLECTION);
+
 	// Disable occlusion visualization in reflection
 	bool bVisOcclusion = r_visocclusion.GetInt();
 	r_visocclusion.SetValue( 0 );
@@ -6239,6 +6366,12 @@ void CReflectiveGlassView::Draw()
 	BaseClass::Draw();
 
 	r_visocclusion.SetValue( bVisOcclusion );
+
+// ------------------------------------------------
+// Addition from Mapbase.
+// finish off the view.  restore the previous view.
+// ------------------------------------------------
+	SetupCurrentView(origin, angles, (view_id_t)nSaveViewID);
 
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 	pRenderContext->Flush();
@@ -6301,7 +6434,20 @@ void CRefractiveGlassView::Draw()
 	CMatRenderContextPtr pRenderContext( materials );
 	PIXEVENT( pRenderContext, "CRefractiveGlassView::Draw" );
 
+// -----------------------------------------------------
+// Additions from Mapbase.
+// Store off view origin and angles and set the new view
+// -----------------------------------------------------
+	int nSaveViewID = CurrentViewID();
+	SetupCurrentView(origin, angles, VIEW_REFRACTION);
+
 	BaseClass::Draw();
+
+// ------------------------------------------------
+// Addition from Mapbase.
+// finish off the view.  restore the previous view.
+// ------------------------------------------------
+	SetupCurrentView(origin, angles, (view_id_t)nSaveViewID);
 
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 	pRenderContext->Flush();

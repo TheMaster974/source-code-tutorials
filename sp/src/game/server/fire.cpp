@@ -2,7 +2,7 @@
 //
 // Purpose: 
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //
 //=============================================================================//
 //---------------------------------------------------------
@@ -69,7 +69,7 @@ ConVar fire_extabsorb("fire_extabsorb", "5");
 ConVar fire_heatscale( "fire_heatscale", "1.0" );
 ConVar fire_incomingheatscale( "fire_incomingheatscale", "0.1" );
 ConVar fire_dmgscale( "fire_dmgscale", "0.1" );
-ConVar fire_dmgbase( "fire_dmgbase", "1" );
+ConVar fire_dmgbase( "fire_dmgbase", "10" ); // Increased fire damage.
 ConVar fire_growthrate( "fire_growthrate", "1.0" );
 ConVar fire_dmginterval( "fire_dmginterval", "1.0" );
 

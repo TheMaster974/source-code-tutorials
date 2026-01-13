@@ -125,3 +125,9 @@
 // ---------
 
 @PointClass base(Weapon) studio("models/weapons/w_immolator.mdl") = weapon_immolator : "Immolator" []
+
+// ---------
+// Flashbang
+// ---------
+
+@PointClass base(Weapon) studio("models/weapons/w_frag.mdl") = weapon_flash : "Flashbang Grenade" []

@@ -12,7 +12,7 @@
 #include	"basehlcombatweapon.h"
 #include	"basecombatcharacter.h"
 #include	"ai_basenpc.h"
-#include	"ai_memory.h"		// Fix for Linux compilation.
+#include	"AI_Memory.h"
 #include	"player.h"
 #include	"gamerules.h"		// For g_pGameRules
 #include	"weapon_molotov.h"
@@ -21,7 +21,13 @@
 #include	"game.h"			
 #include "vstdlib/random.h"
 #include "movevars_shared.h"
-#include "gamestats.h" // Addition.
+
+// ----------
+// Additions.
+// ----------
+#include "gamestats.h"
+#include "fire.h"
+#include "explode.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -66,6 +72,12 @@ void CWeaponMolotov::Spawn( void )
 {
 	// Call base class first
 	BaseClass::Spawn();
+
+// -----------------------
+// Additions/Subtractions.
+// -----------------------
+	m_takedamage = DAMAGE_YES;
+	m_iHealth = 15;
 
 //	m_bNeedDraw		= true;
 
@@ -128,13 +140,12 @@ void CWeaponMolotov::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatC
 // ------------------
 // Modified function.
 // ------------------
-	CBasePlayer* pOwner = ToBasePlayer(GetOwner()); // Find the player.
 	bool fThrewMolotov = false; // Has the molotov been thrown?
 	switch( pEvent->event )
 	{
 		case EVENT_WEAPON_THROW:
-			ThrowMolotov(pOwner); // Throw the molotov!
-			pOwner->RemoveAmmo(1, m_iSecondaryAmmoType); // Subtract 1 from the ammo count.
+			ThrowMolotov(pOperator); // Throw the molotov!
+			pOperator->RemoveAmmo(1, m_iSecondaryAmmoType); // Subtract 1 from the ammo count.
 			fThrewMolotov = true; // The molotov has been thrown!
 			break;
 		/*
@@ -466,7 +477,10 @@ void CWeaponMolotov::ItemPostFrame( void )
 		PrimaryAttack();
 
 	if (m_bRedraw)
+	{
 		Reload();
+		return;
+	}
 
 	BaseClass::ItemPostFrame();
 
@@ -542,6 +556,10 @@ bool CWeaponMolotov::Reload()
 	if (m_bRedraw && m_flNextPrimaryAttack <= gpGlobals->curtime)
 	{
 		SendWeaponAnim(ACT_VM_DRAW); // Play drawing animation.
+
+		m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration();
+		m_flTimeWeaponIdle = gpGlobals->curtime + SequenceDuration();
+
 		m_bRedraw = false;
 	}
 	return true;
@@ -563,22 +581,45 @@ void CWeaponMolotov::CheckThrowPosition(CBasePlayer* pPlayer, const Vector& vecE
 		vecSrc = tr.endpos;
 }
 
-void CWeaponMolotov::ThrowMolotov(CBasePlayer* pPlayer)
+void CWeaponMolotov::ThrowMolotov(CBaseCombatCharacter *pThrower)
 {
 // ----------------------------------------
 // Get throw position, angles and velocity.
 // ----------------------------------------
-	Vector vecEye = pPlayer->EyePosition();
-	Vector vForward, vRight;
+	Vector vecEye = pThrower->EyePosition();
+	Vector vForward, vRight, vUp, vecSrc, vecThrow;
 
-	pPlayer->EyeVectors(&vForward, &vRight, NULL);
-	Vector vecSrc = vecEye + vForward * 18.0f + vRight * 8.0f;
-	CheckThrowPosition(pPlayer, vecEye, vecSrc);
-	vForward[2] += 0.1f;
+	if (pThrower->IsPlayer())
+	{
+		CBasePlayer* pPlayer = ToBasePlayer(pThrower);
+		if (!pPlayer)
+			return;
 
-	Vector vecThrow;
-	pPlayer->GetVelocity(&vecThrow, NULL);
-	vecThrow += vForward * 1200;
+		pPlayer->EyeVectors(&vForward, &vRight, NULL);
+		vecSrc = vecEye + vForward * 18.0f + vRight * 8.0f;
+		CheckThrowPosition(pPlayer, vecEye, vecSrc);
+		vForward[2] += 0.1f;
+
+		pPlayer->GetVelocity(&vecThrow, NULL);
+		vecThrow += vForward * 1200;
+
+		gamestats->Event_WeaponFired(pPlayer, true, GetClassname());
+	}
+	else
+	{
+		pThrower->GetAttachment("anim_attachment_RH", vecSrc);
+		Vector vecTarget = pThrower->GetEnemy()->GetAbsOrigin();
+		vecThrow = VecCheckThrow(pThrower, vecSrc, vecTarget, 650, 1.0);
+		if (vecThrow == vec3_origin)
+		{
+			vecThrow = VecCheckToss(pThrower, vecSrc, vecTarget, -1, 1.0, true);
+			if (vecThrow == vec3_origin)
+			{
+				GetVectors(&vForward, NULL, &vUp);
+				vecThrow = vForward * 750 + vUp * 175;
+			}
+		}
+	}
 
 // -----------------------------------------------------------
 // Create the molotov grenade and apply some properties to it.
@@ -594,5 +635,100 @@ void CWeaponMolotov::ThrowMolotov(CBasePlayer* pPlayer)
 	pMolotov->SetThrower(GetOwner());
 	pMolotov->SetOwnerEntity((CBaseEntity*)GetOwner());
 	m_iPrimaryAttacks++;
-	gamestats->Event_WeaponFired(pPlayer, true, GetClassname());
+}
+
+// If the player drops this weapon, the right amount of ammo is subtracted.
+void CWeaponMolotov::DecrementAmmo(CBaseCombatCharacter* pOwner)
+{
+	pOwner->RemoveAmmo(1, m_iSecondaryAmmoType);
+}
+
+// Make the weapon receive damage when dropped.
+void CWeaponMolotov::Drop(const Vector& velocity)
+{
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+	if (!pPlayer)
+		return;
+
+	DecrementAmmo(pPlayer);
+	m_takedamage = DAMAGE_YES;
+	BaseClass::Drop(velocity);
+}
+
+// Explode! Most of this was taken from grenade_molotov.cpp.
+void CWeaponMolotov::Event_Killed(const CTakeDamageInfo& info)
+{
+	m_takedamage = DAMAGE_NO;
+
+	trace_t trace;
+	UTIL_TraceLine(GetAbsOrigin(), GetAbsOrigin() + Vector(0, 0, -128), MASK_SOLID_BRUSHONLY,
+		this, COLLISION_GROUP_NONE, &trace);
+
+	int contents = UTIL_PointContents(GetAbsOrigin());
+
+	if ((contents & MASK_WATER))
+	{
+		UTIL_Remove(this);
+		return;
+	}
+
+	CPASAttenuationFilter filter(this);
+	EmitSound(filter, entindex(), "Grenade_Molotov.Detonate");
+
+	// Start some fires
+	int i;
+	QAngle vecTraceAngles;
+	Vector vecTraceDir;
+	trace_t firetrace;
+
+	for (i = 0; i < 16; i++)
+	{
+		// build a little ray
+		vecTraceAngles[PITCH] = random->RandomFloat(45, 135);
+		vecTraceAngles[YAW] = random->RandomFloat(0, 360);
+		vecTraceAngles[ROLL] = 0.0f;
+
+		AngleVectors(vecTraceAngles, &vecTraceDir);
+
+		Vector vecStart, vecEnd;
+
+		vecStart = GetAbsOrigin() + (trace.plane.normal * 128);
+		vecEnd = vecStart + vecTraceDir * 512;
+
+		UTIL_TraceLine(vecStart, vecEnd, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &firetrace);
+
+		Vector	ofsDir = (firetrace.endpos - GetAbsOrigin());
+		float	offset = VectorNormalize(ofsDir);
+
+		if (offset > 128)
+			offset = 128;
+
+		//Get our scale based on distance
+		float scale = 0.1f + (0.75f * (1.0f - (offset / 128.0f)));
+		float growth = 0.1f + (0.75f * (offset / 128.0f));
+
+		if (firetrace.fraction != 1.0)
+		{
+			FireSystem_StartFire(firetrace.endpos, scale, growth, 30.0f, (SF_FIRE_START_ON | SF_FIRE_SMOKELESS | SF_FIRE_NO_GLOW), (CBaseEntity*)this, FIRE_NATURAL);
+		}
+	}
+	// End Start some fires
+
+	ExplosionCreate(GetAbsOrigin() + Vector(0, 0, 16), GetAbsAngles(), NULL, 50, 100,
+		SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this, DMG_BURN);
+
+	CBaseEntity* pOwner;
+	pOwner = GetOwnerEntity();
+	SetOwnerEntity(NULL); // can't traceline attack owner if this is set
+
+	UTIL_DecalTrace(&trace, "Scorch");
+
+	UTIL_ScreenShake(GetAbsOrigin(), 25.0, 150.0, 1.0, 750, SHAKE_START);
+	CSoundEnt::InsertSound(SOUND_DANGER, GetAbsOrigin(), BASEGRENADE_EXPLOSION_VOLUME, 3.0);
+
+	AddEffects(EF_NODRAW);
+	SetAbsVelocity(vec3_origin);
+	SetNextThink(gpGlobals->curtime + 0.2);
+
+	UTIL_Remove(this);
 }

@@ -8,3 +8,9 @@
 //
 
 // There are no examples of such shaders in the SDK, but add yours here.
+
+//pbr_ps30.fxc
+//pbr_vs30.fxc
+
+//skydome_ps30.fxc
+//skydome_vs30.fxc

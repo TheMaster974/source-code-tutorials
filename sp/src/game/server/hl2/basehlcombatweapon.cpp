@@ -88,7 +88,7 @@ void CHLMachineGun::PrimaryAttack( void )
 
 	Vector vecSpread = pPlayer->GetAttackSpread(this);
 	float randFloat = vecSpread.x; // x = y = z
-	Vector spreadToUse = RandomVector(-randFloat, randFloat);
+	Vector spreadToUse = RandomVector(0, randFloat); // Minor change.
 
 	// Fire the bullets
 	FireBulletsInfo_t info;

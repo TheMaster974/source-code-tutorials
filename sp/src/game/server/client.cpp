@@ -2,7 +2,7 @@
 //
 // Purpose: 
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //
 //=============================================================================//
 /*
@@ -745,10 +745,12 @@ CON_COMMAND_F( buddha, "Toggle.  Player takes damage but won't die. (Shows red c
 
 
 #define TALK_INTERVAL 0.66 // min time between say commands from a client
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
+// Replace the 'say' command so people don't end up talking to themselves!
+// -----------------------------------------------------------------------
 CON_COMMAND( say, "Display player message" )
 {
+	/*
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() ); 
 	if ( pPlayer )
 	{
@@ -766,19 +768,47 @@ CON_COMMAND( say, "Display player message" )
 	{
 		Host_Say( NULL, args, 0 );
 	}
+	*/
+	CBasePlayer* pPlayer = ToBasePlayer(UTIL_GetCommandClient());
+	if (pPlayer)
+	{
+		if ((pPlayer->LastTimePlayerTalked() + TALK_INTERVAL) < gpGlobals->curtime)
+		{
+			CSingleUserRecipientFilter filter(pPlayer);
+			filter.MakeReliable();
+
+			UTIL_SayTextFilter(filter, "Subscribe to TheMaster974 on YouTube!", pPlayer, true);
+			pPlayer->NotePlayerTalked();
+		}
+	}
 }
 
 
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Replace the 'say_team' command so people don't end up talking to themselves!
+// ----------------------------------------------------------------------------
 CON_COMMAND( say_team, "Display player message to team" )
 {
+	/*
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() ); 
 	if (pPlayer)
 	{
 		if (( pPlayer->LastTimePlayerTalked() + TALK_INTERVAL ) < gpGlobals->curtime) 
 		{
 			Host_Say( pPlayer->edict(), args, 1 );
+			pPlayer->NotePlayerTalked();
+		}
+	}
+	*/
+	CBasePlayer* pPlayer = ToBasePlayer(UTIL_GetCommandClient());
+	if (pPlayer)
+	{
+		if ((pPlayer->LastTimePlayerTalked() + TALK_INTERVAL) < gpGlobals->curtime)
+		{
+			CSingleUserRecipientFilter filter(pPlayer);
+			filter.MakeReliable();
+
+			UTIL_SayTextFilter(filter, "Subscribe to TheMaster974 on YouTube!", pPlayer, true);
 			pPlayer->NotePlayerTalked();
 		}
 	}

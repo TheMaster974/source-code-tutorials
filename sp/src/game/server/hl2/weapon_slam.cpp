@@ -15,7 +15,12 @@
 #include "entitylist.h"
 #include "eventqueue.h"
 #include "weapon_slam.h"
-#include "tutorials/blacklist.h" // Addition.
+
+// ----------
+// Additions.
+// ----------
+#include "tutorials/blacklist.h"
+#include "explode.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -73,6 +78,12 @@ void CWeapon_SLAM::Spawn( )
 
 	// Give 1 piece of default ammo when first picked up
 	m_iClip2 = 1;
+
+// ----------
+// Additions.
+// ----------
+	m_takedamage = DAMAGE_YES;
+	m_iHealth = 15;
 }
 
 void CWeapon_SLAM::Precache( void )
@@ -870,20 +881,6 @@ bool CWeapon_SLAM::Deploy( void )
 	return DefaultDeploy( (char*)GetViewModel(), (char*)GetWorldModel(), iActivity, (char*)GetAnimPrefix() );
 }
 
-// ----------------------------------------------------------------------------
-// This is to handle situations where the SLAM detonator may not be selectable,
-// even though there are active satchel charges in play.
-// ----------------------------------------------------------------------------
-bool CWeapon_SLAM::HasAnyAmmo(void)
-{
-	if (AnyUndetonatedCharges() || m_iClip2 > 0)
-		return true;
-	else
-		return false;
-
-	return BaseClass::HasAnyAmmo();
-}
-
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 // Input  :
@@ -899,4 +896,52 @@ CWeapon_SLAM::CWeapon_SLAM(void)
 	m_bAttachTripmine		= false;
 	m_bNeedDetonatorDraw	= false;
 	m_bNeedDetonatorHolster	= false;
+}
+
+// ----------
+// Additions.
+// ----------
+// ----------------------------------------------------------------------------
+// This is to handle situations where the SLAM detonator may not be selectable,
+// even though there are active satchel charges in play.
+// ----------------------------------------------------------------------------
+bool CWeapon_SLAM::HasAnyAmmo(void)
+{
+	if (AnyUndetonatedCharges() || m_iClip2 > 0)
+		return true;
+	else
+		return false;
+
+	return BaseClass::HasAnyAmmo();
+}
+
+// This subtracts ammo when the weapon is dropped.
+void CWeapon_SLAM::DecrementAmmo(CBaseCombatCharacter* pOwner)
+{
+	pOwner->RemoveAmmo(1, m_iSecondaryAmmoType);
+}
+
+// Make the weapon receive damage when dropped.
+void CWeapon_SLAM::Drop(const Vector& velocity)
+{
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+	if (!pPlayer)
+		return;
+
+	DecrementAmmo(pPlayer);
+	m_takedamage = DAMAGE_YES;
+	BaseClass::Drop(velocity);
+}
+
+// Explode!
+void CWeapon_SLAM::Event_Killed(const CTakeDamageInfo& info)
+{
+	m_takedamage = DAMAGE_NO;
+
+	UTIL_ScreenShake(GetAbsOrigin(), 25.0, 150.0, 1.0, 750, SHAKE_START);
+
+	ExplosionCreate(GetAbsOrigin() + Vector(0, 0, 16), GetAbsAngles(), NULL, 100, 100,
+		SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
+
+	UTIL_Remove(this);
 }
