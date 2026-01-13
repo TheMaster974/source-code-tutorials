@@ -1,4 +1,6 @@
-# If you use any of these modified files, please give credit to TheMaster974!
+---------------------------------------------------------------------------
+If you use any of these modified files, please give credit to TheMaster974!
+---------------------------------------------------------------------------
 
 A fork of the 2013 SDK, with additions/modifications from my YouTube videos linked below. This (currently) covers all Singleplayer and Multiplayer changes from tutorials 0.5 to 35 (excluding 6 and 8 i.e. the Source Shader Editor and shader setup stuff) and Source Shorts 1 to 30 (excluding 7/8/15/17 i.e. Mapbase issues, using leaked engine code and Fake CSM from celisej567). Let me know if there are any issues!
 
@@ -10,13 +12,17 @@ Source Shader Editor fork → https://github.com/TheMaster974/source-shader-edit
 
 Includes Dynamic RTT Shadows feature from Saul Rennison, Gamepad UI feature from Joshua Ashton / DasMaddi, Animated Background Menu feature from Jorge "BSVino" Rodriguez and Custom Loading Screen feature from Cvoxalury / sylveonsylvia / Maestra Fénix, with some assistance from WadDelZ!
 
-# Linux Issues
+------------
+Linux Issues
+------------
 
 At the time of updating this readme, Source SDK Base 2013 Singleplayer does NOT work on Linux! I will try to make Valve aware of this issue, for now there is a hacky fix which can be found here: https://github.com/ValveSoftware/portal2/issues/451#issuecomment-2632833249
 
 Also, the Gamepad UI code *can* be compiled on Linux, but only via the 'docker'/'container' method. If you want to enable this, go to the sp/src/vpc_scripts/projects.vgc file and remove the 'WIN32 &&' parts to enable the projects on Linux. I have also performed a few minor changes to some of the files that caused issues on Linux but not on Windows i.e. (client/server)_(hl2/episodic).vpc files.
 
-# Source SDK License Information
+------------------------------
+Source SDK License Information
+------------------------------
 
 SOURCE 1 SDK LICENSE
 
