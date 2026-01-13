@@ -1,6 +1,6 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Fixed some buggy SLAM functionality. Removed SatchelAttach stuff.
 //
 //=============================================================================//
 
@@ -14,10 +14,16 @@
 	#include "c_hl2mp_player.h"
 #else
 	#include "hl2mp_player.h"
-	#include "grenade_tripmine.h"
-	#include "grenade_satchel.h"
+	#include "hl2mp/grenade_tripmine.h" // Point to the correct file!
+	#include "hl2mp/grenade_satchel.h" // Point to the correct file!
 	#include "entitylist.h"
 	#include "eventqueue.h"
+
+// ----------
+// Additions.
+// ----------
+	#include "tutorials/blacklist.h"
+	#include "explode.h"
 #endif
 
 #include "hl2mp/weapon_slam.h"
@@ -38,7 +44,6 @@ BEGIN_NETWORK_TABLE( CWeapon_SLAM, DT_Weapon_SLAM )
 	RecvPropBool( RECVINFO( m_bNeedReload ) ),
 	RecvPropBool( RECVINFO( m_bClearReload ) ),
 	RecvPropBool( RECVINFO( m_bThrowSatchel ) ),
-	RecvPropBool( RECVINFO( m_bAttachSatchel ) ),
 	RecvPropBool( RECVINFO( m_bAttachTripmine ) ),
 #else
 	SendPropInt( SENDINFO( m_tSlamState ) ),
@@ -48,7 +53,6 @@ BEGIN_NETWORK_TABLE( CWeapon_SLAM, DT_Weapon_SLAM )
 	SendPropBool( SENDINFO( m_bNeedReload ) ),
 	SendPropBool( SENDINFO( m_bClearReload ) ),
 	SendPropBool( SENDINFO( m_bThrowSatchel ) ),
-	SendPropBool( SENDINFO( m_bAttachSatchel ) ),
 	SendPropBool( SENDINFO( m_bAttachTripmine ) ),
 #endif
 END_NETWORK_TABLE()
@@ -63,7 +67,6 @@ BEGIN_PREDICTION_DATA( CWeapon_SLAM )
 	DEFINE_PRED_FIELD( m_bNeedReload, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_bClearReload, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_bThrowSatchel, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
-	DEFINE_PRED_FIELD( m_bAttachSatchel, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_bAttachTripmine, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 END_PREDICTION_DATA()
 
@@ -83,7 +86,6 @@ BEGIN_DATADESC( CWeapon_SLAM )
 	DEFINE_FIELD( m_bNeedReload, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bClearReload, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bThrowSatchel, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bAttachSatchel, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bAttachTripmine, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flWallSwitchTime, FIELD_TIME ),
 
@@ -121,6 +123,12 @@ void CWeapon_SLAM::Spawn( )
 
 	// Give 1 piece of default ammo when first picked up
 	m_iClip2 = 1;
+
+// ----------
+// Additions.
+// ----------
+	m_takedamage = DAMAGE_YES;
+	m_iHealth = 15;
 }
 
 void CWeapon_SLAM::Precache( void )
@@ -179,26 +187,6 @@ bool CWeapon_SLAM::Holster( CBaseCombatWeapon *pSwitchingTo )
 	return BaseClass::Holster(pSwitchingTo);
 }
 
-#ifdef GAME_DLL
-const CUtlVector< CBaseEntity* > &CWeapon_SLAM::GetSatchelVector()
-{
-	m_SatchelVector.RemoveAll();
-
-	CBaseEntity* pEntity = NULL;
-
-	while ( ( pEntity = gEntList.FindEntityByClassname( pEntity, "npc_satchel" ) ) != NULL )
-	{
-		CSatchelCharge* pSatchel = dynamic_cast< CSatchelCharge* >( pEntity );
-		if ( pSatchel->m_bIsLive && pSatchel->GetThrower() && GetOwner() && pSatchel->GetThrower() == GetOwner() )
-		{
-			m_SatchelVector.AddToTail( pSatchel );
-		}
-	}
-
-	return m_SatchelVector;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: SLAM has no reload, but must call weapon idle to update state
 // Input  :
@@ -238,9 +226,6 @@ void CWeapon_SLAM::PrimaryAttack( void )
 			break;
 		case SLAM_SATCHEL_THROW:
 			StartSatchelThrow();
-			break;
-		case SLAM_SATCHEL_ATTACH:
-			StartSatchelAttach();
 			break;
 	}
 }
@@ -323,7 +308,7 @@ bool CWeapon_SLAM::AnyUndetonatedCharges(void)
 void CWeapon_SLAM::StartSatchelDetonate()
 {
 
-	if ( GetActivity() != ACT_SLAM_DETONATOR_IDLE && GetActivity() != ACT_SLAM_THROW_IDLE )
+	if ( GetActivity() != ACT_SLAM_DETONATOR_IDLE && GetActivity() != ACT_SLAM_THROW_IDLE && GetActivity() != ACT_SLAM_STICKWALL_IDLE )
 		 return;
 	
 	// -----------------------------------------
@@ -333,7 +318,7 @@ void CWeapon_SLAM::StartSatchelDetonate()
 	{
 		SendWeaponAnim(ACT_SLAM_DETONATOR_DETONATE);
 	}
-	else if (m_tSlamState == SLAM_SATCHEL_ATTACH)
+	else if (m_tSlamState == SLAM_TRIPMINE_READY)
 	{
 		SendWeaponAnim(ACT_SLAM_STICKWALL_DETONATE);
 	}
@@ -396,6 +381,15 @@ void CWeapon_SLAM::TripmineAttach( void )
 
 			CTripmineGrenade *pMine = (CTripmineGrenade *)pEnt;
 			pMine->m_hOwner = GetOwner();
+
+// ----------
+// Additions.
+// ----------
+			pMine->AttachToEntity(pEntity);
+
+			bool parentTripmine = TripmineBlacklistCheck(pEntity);
+			if (!parentTripmine)
+				pMine->SetParent(pEntity);
 
 #endif
 
@@ -556,112 +550,6 @@ void CWeapon_SLAM::StartSatchelThrow( void )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CWeapon_SLAM::SatchelAttach( void )
-{
-#ifndef CLIENT_DLL
-	CBaseCombatCharacter *pOwner  = GetOwner();
-	if (!pOwner)
-	{
-		return;
-	}
-
-	m_bAttachSatchel = false;
-
-	Vector vecSrc	 = pOwner->Weapon_ShootPosition( );
-	Vector vecAiming = pOwner->BodyDirection2D( );
-
-	trace_t tr;
-
-	UTIL_TraceLine( vecSrc, vecSrc + (vecAiming * 128), MASK_SOLID, pOwner, COLLISION_GROUP_NONE, &tr );
-	
-	if (tr.fraction < 1.0)
-	{
-		CBaseEntity *pEntity = tr.m_pEnt;
-		if (pEntity && !(pEntity->GetFlags() & FL_CONVEYOR))
-		{
-			QAngle angles;
-			VectorAngles(tr.plane.normal, angles);
-			angles.y -= 90;
-			angles.z -= 90;
-			tr.endpos.z -= 6.0f;
-					
-			CSatchelCharge *pSatchel	= (CSatchelCharge*)CBaseEntity::Create( "npc_satchel", tr.endpos + tr.plane.normal * 3, angles, NULL );
-			pSatchel->SetMoveType( MOVETYPE_FLY ); // no gravity
-			pSatchel->m_bIsAttached		= true;
-			pSatchel->m_bIsLive			= true;
-			pSatchel->SetThrower( GetOwner() );
-			pSatchel->SetOwnerEntity( ((CBaseEntity*)GetOwner()) );
-			pSatchel->m_pMyWeaponSLAM	= this;
-
-			pOwner->RemoveAmmo( 1, m_iSecondaryAmmoType );
-		}
-	}
-#endif
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-void CWeapon_SLAM::StartSatchelAttach( void )
-{
-#ifndef CLIENT_DLL
-	CBaseCombatCharacter *pOwner  = GetOwner();
-	if (!pOwner)
-	{
-		return;
-	}
-
-	Vector vecSrc	 = pOwner->Weapon_ShootPosition( );
-	Vector vecAiming = pOwner->BodyDirection2D( );
-
-	trace_t tr;
-
-	UTIL_TraceLine( vecSrc, vecSrc + (vecAiming * 128), MASK_SOLID, pOwner, COLLISION_GROUP_NONE, &tr );
-	
-	if (tr.fraction < 1.0)
-	{
-		CBaseEntity *pEntity = tr.m_pEnt;
-		if (pEntity && !(pEntity->GetFlags() & FL_CONVEYOR))
-		{
-			// Only the player fires this way so we can cast
-			CBasePlayer *pPlayer = ToBasePlayer( pOwner );
-
-			// player "shoot" animation
-			pPlayer->SetAnimation( PLAYER_ATTACK1 );
-
-			// -----------------------------------------
-			//  Play attach animation
-			// -----------------------------------------
-			if (m_bDetonatorArmed)
-			{
-				SendWeaponAnim(ACT_SLAM_STICKWALL_ATTACH);
-			}
-			else
-			{
-				SendWeaponAnim(ACT_SLAM_STICKWALL_ND_ATTACH);
-				if (!m_bDetonatorArmed)
-				{
-					m_bDetonatorArmed		= true;
-					m_bNeedDetonatorDraw	= true;
-				}
-			}
-			
-			m_bNeedReload		= true;
-			m_bAttachSatchel	= true;
-
-			m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration();
-		}
-	}
-#endif
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
 void CWeapon_SLAM::SetSlamState( int newState )
 {
 	// Set set and set idle time so animation gets updated with state change
@@ -775,6 +663,14 @@ void CWeapon_SLAM::ItemPostFrame( void )
 
 	SLAMThink();
 
+// ---------
+// Addition.
+// ---------
+	if (AnyUndetonatedCharges())
+		m_bDetonatorArmed = true;
+	else
+		m_bDetonatorArmed = false;
+
 	if ((pOwner->m_nButtons & IN_ATTACK2) && (m_flNextSecondaryAttack <= gpGlobals->curtime))
 	{
 		SecondaryAttack();
@@ -861,18 +757,6 @@ void CWeapon_SLAM::WeaponIdle( void )
 				iAnim = ACT_SLAM_THROW_THROW_ND2;
 			}
 		}
-		else if (m_bAttachSatchel)
-		{
-			SatchelAttach();
-			if (m_bDetonatorArmed && !m_bNeedDetonatorDraw)
-			{
-				iAnim = ACT_SLAM_STICKWALL_ATTACH2;
-			}
-			else
-			{
-				iAnim = ACT_SLAM_STICKWALL_ND_ATTACH2;
-			}
-		}
 		else if (m_bAttachTripmine)
 		{
 			TripmineAttach();
@@ -887,25 +771,20 @@ void CWeapon_SLAM::WeaponIdle( void )
 				{
 					case SLAM_TRIPMINE_READY:
 						{
-							iAnim = m_bNeedDetonatorDraw ? ACT_SLAM_STICKWALL_DRAW : ACT_SLAM_TRIPMINE_DRAW;
-						}
-						break;
-					case SLAM_SATCHEL_ATTACH:
+						if (m_bNeedDetonatorHolster)
 						{
-							if (m_bNeedDetonatorHolster)
-							{
-								iAnim = ACT_SLAM_STICKWALL_DETONATOR_HOLSTER;
-								m_bNeedDetonatorHolster = false;
-							}
-							else if (m_bDetonatorArmed)
-							{
-								iAnim =	m_bNeedDetonatorDraw ? ACT_SLAM_DETONATOR_STICKWALL_DRAW : ACT_SLAM_STICKWALL_DRAW;
-								m_bNeedDetonatorDraw = false;
-							}
-							else
-							{
-								iAnim =	ACT_SLAM_STICKWALL_ND_DRAW;
-							}
+							iAnim = ACT_SLAM_STICKWALL_DETONATOR_HOLSTER;
+							m_bNeedDetonatorHolster = false;
+						}
+						else if (m_bDetonatorArmed)
+						{
+							iAnim = m_bNeedDetonatorDraw ? ACT_SLAM_DETONATOR_STICKWALL_DRAW : ACT_SLAM_STICKWALL_DRAW;
+							m_bNeedDetonatorDraw = false;
+						}
+						else
+						{
+							iAnim = ACT_SLAM_STICKWALL_ND_DRAW;
+						}
 						}
 						break;
 					case SLAM_SATCHEL_THROW:
@@ -958,8 +837,16 @@ void CWeapon_SLAM::WeaponIdle( void )
 			{
 				case SLAM_TRIPMINE_READY:
 					{
+					if (m_bNeedDetonatorHolster)
+					{
+						iAnim = ACT_SLAM_STICKWALL_DETONATOR_HOLSTER;
+						m_bNeedDetonatorHolster = false;
+					}
+					else
+					{
 						iAnim = m_bDetonatorArmed ? ACT_SLAM_STICKWALL_IDLE : ACT_SLAM_TRIPMINE_IDLE;
 						m_flWallSwitchTime = 0;
+					}
 					}
 					break;
 				case SLAM_SATCHEL_THROW:
@@ -972,20 +859,6 @@ void CWeapon_SLAM::WeaponIdle( void )
 						else
 						{
 							iAnim = m_bDetonatorArmed ? ACT_SLAM_THROW_IDLE : ACT_SLAM_THROW_ND_IDLE;
-							m_flWallSwitchTime = 0;
-						}
-					}
-					break;
-				case SLAM_SATCHEL_ATTACH:
-					{
-						if (m_bNeedDetonatorHolster)
-						{
-							iAnim = ACT_SLAM_STICKWALL_DETONATOR_HOLSTER;
-							m_bNeedDetonatorHolster = false;
-						}
-						else
-						{
-							iAnim = m_bDetonatorArmed ? ACT_SLAM_STICKWALL_IDLE : ACT_SLAM_TRIPMINE_IDLE;
 							m_flWallSwitchTime = 0;
 						}
 					}
@@ -1065,8 +938,60 @@ CWeapon_SLAM::CWeapon_SLAM(void)
 	m_bNeedReload			= true;
 	m_bClearReload			= false;
 	m_bThrowSatchel			= false;
-	m_bAttachSatchel		= false;
 	m_bAttachTripmine		= false;
 	m_bNeedDetonatorDraw	= false;
 	m_bNeedDetonatorHolster	= false;
+}
+
+// ----------
+// Additions.
+// ----------
+// ----------------------------------------------------------------------------
+// This is to handle situations where the SLAM detonator may not be selectable,
+// even though there are active satchel charges in play.
+// ----------------------------------------------------------------------------
+bool CWeapon_SLAM::HasAnyAmmo(void)
+{
+	if (AnyUndetonatedCharges() || m_iClip2 > 0)
+		return true;
+	else
+		return false;
+
+	return BaseClass::HasAnyAmmo();
+}
+
+// This subtracts ammo when the weapon is dropped.
+void CWeapon_SLAM::DecrementAmmo(CBaseCombatCharacter* pOwner)
+{
+	pOwner->RemoveAmmo(1, m_iSecondaryAmmoType);
+}
+
+// Make the weapon receive damage when dropped.
+void CWeapon_SLAM::Drop(const Vector& velocity)
+{
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+	if (!pPlayer)
+		return;
+
+	DecrementAmmo(pPlayer);
+	m_takedamage = DAMAGE_YES;
+	BaseClass::Drop(velocity);
+}
+
+// Explode!
+void CWeapon_SLAM::Event_Killed(const CTakeDamageInfo& info)
+{
+	m_takedamage = DAMAGE_NO;
+
+	UTIL_ScreenShake(GetAbsOrigin(), 25.0, 150.0, 1.0, 750, SHAKE_START);
+
+// ----------------------------------
+// Only explode/remove on the Server.
+// ----------------------------------
+#ifndef CLIENT_DLL
+	ExplosionCreate(GetAbsOrigin() + Vector(0, 0, 16), GetAbsAngles(), NULL, 100, 100,
+		SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
+
+	UTIL_Remove(this);
+#endif
 }

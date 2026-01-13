@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Added Hopwire ammo type.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 #include "cbase.h"
 #include "hl2mp_gamerules.h"
@@ -15,7 +15,6 @@
 	#include "c_hl2mp_player.h"
 #else
 
-	#include "nav_mesh.h"
 	#include "eventqueue.h"
 	#include "player.h"
 	#include "gamerules.h"
@@ -33,6 +32,10 @@
 	#include "voice_gamemgr.h"
 	#include "hl2mp_gameinterface.h"
 	#include "hl2mp_cvars.h"
+
+#ifdef DEBUG	
+	#include "hl2mp_bot_temp.h"
+#endif
 
 extern void respawn(CBaseEntity *pEdict, bool fCopyCorpse);
 
@@ -867,37 +870,6 @@ void CHL2MPRules::Precache( void )
 	CBaseEntity::PrecacheScriptSound( "AlyxEmp.Charge" );
 }
 
-#ifdef GAME_DLL
-bool CHL2MPRules::IsOfficialMap( void )
-{ 
-	static const char *s_OfficialMaps[] =
-	{
-		"devtest",
-		"dm_lockdown",
-		"dm_overwatch",
-		"dm_powerhouse",
-		"dm_resistance",
-		"dm_runoff",
-		"dm_steamlab",
-		"dm_underpass",
-		"halls3",
-	};
-
-	char szCurrentMap[MAX_MAP_NAME];
-	Q_strncpy( szCurrentMap, STRING( gpGlobals->mapname ), sizeof( szCurrentMap ) );
-
-	for ( int i = 0; i < ARRAYSIZE( s_OfficialMaps ); ++i )
-	{
-		if ( !Q_stricmp( s_OfficialMaps[i], szCurrentMap ) )
-		{
-			return true;
-		}
-	}
-
-	return BaseClass::IsOfficialMap();
-}
-#endif
-
 bool CHL2MPRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 {
 	if ( collisionGroup0 > collisionGroup1 )
@@ -963,6 +935,10 @@ CAmmoDef *GetAmmoDef()
 		def.AddAmmoType("SMG1_Grenade",		DMG_BURN,					TRACER_NONE,			0,			0,			3,			0,							0 );
 		def.AddAmmoType("Grenade",			DMG_BURN,					TRACER_NONE,			0,			0,			5,			0,							0 );
 		def.AddAmmoType("slam",				DMG_BURN,					TRACER_NONE,			0,			0,			5,			0,							0 );
+// ---------
+// Addition.
+// ---------
+		def.AddAmmoType("Hopwire",			DMG_BLAST,					TRACER_NONE,			0,			0,			5,			0,							0 );
 	}
 
 	return &def;
@@ -977,6 +953,32 @@ CAmmoDef *GetAmmoDef()
 		"Automatically switch to picked up weapons (if more powerful)" );
 
 #else
+
+#ifdef DEBUG
+
+	// Handler for the "bot" command.
+	void Bot_f()
+	{		
+		// Look at -count.
+		int count = 1;
+		count = clamp( count, 1, 16 );
+
+		int iTeam = TEAM_COMBINE;
+				
+		// Look at -frozen.
+		bool bFrozen = false;
+			
+		// Ok, spawn all the bots.
+		while ( --count >= 0 )
+		{
+			BotPutInServer( bFrozen, iTeam );
+		}
+	}
+
+
+	ConCommand cc_Bot( "bot", Bot_f, "Add a bot.", FCVAR_CHEAT );
+
+#endif
 
 	bool CHL2MPRules::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
 	{		
@@ -1060,13 +1062,6 @@ void CHL2MPRules::RestartGame()
 		gameeventmanager->FireEvent( event );
 	}
 }
-
-#ifdef GAME_DLL
-void CHL2MPRules::OnNavMeshLoad( void )
-{
-	TheNavMesh->SetPlayerSpawnName( "info_player_deathmatch" );
-}
-#endif
 
 void CHL2MPRules::CleanUpMap()
 {

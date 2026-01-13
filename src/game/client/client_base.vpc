@@ -1277,4 +1277,17 @@ $Project
 		//$Libexternal	libz [$LINUXALL]
  	}
 
+
+	$Folder "Tutorials"
+	{
+		$File "hl2\c_weapon__stubs_hl2.cpp" [!$TF]
+		$File "episodic\c_weapon_hopwire.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\hl2mp_gamerules.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_hl2mpbase_machinegun.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_hl2mpbase_machinegun.h" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_shotgun.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_slam.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_slam.h" [!$TF]
+		$File "$SRCDIR\game\shared\tutorials\weapon_smg2.cpp" [!$TF]
+	}
 }

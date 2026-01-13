@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Fixed floating Tripmine bug.
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //=============================================================================//
 
 #ifndef GRENADE_TRIPMINE_H
@@ -37,6 +37,13 @@ public:
 	void MakeBeam( void );
 	void KillBeam( void );
 
+// ----------
+// Additions.
+// ----------
+	void AttachToEntity(CBaseEntity* ent);
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value);
+	void OnPhysGunPickup(CBasePlayer* pPhysGunUser, PhysGunPickup_t reason);
+
 public:
 	EHANDLE		m_hOwner;
 
@@ -49,6 +56,14 @@ private:
 	CBeam		*m_pBeam;
 	Vector		m_posOwner;
 	Vector		m_angleOwner;
+
+// ------------------------------------
+// Additions to fix floating Tripmines.
+// ------------------------------------
+	CBaseEntity* m_pAttachedObject;
+	Vector m_vecOldPosAttachedObject;
+	QAngle m_vecOldAngAttachedObject;
+	int m_pAttachedSequence;
 
 	DECLARE_DATADESC();
 };

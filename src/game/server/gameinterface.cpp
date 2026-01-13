@@ -957,6 +957,15 @@ float g_flServerCurTime = 0.0f;
 bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background )
 {
 	VPROF("CServerGameDLL::LevelInit");
+	
+// ----------------------------------------------------------------------------------------------
+// This stops the game from crashing when setting maxplayers to 1, more for Team Fortress 2 mods!
+// ----------------------------------------------------------------------------------------------
+	ConVarRef cl_localnetworkbackdoor("cl_localnetworkbackdoor");
+	if (gpGlobals->maxClients == 1)
+		cl_localnetworkbackdoor.SetValue("0");
+	else
+		cl_localnetworkbackdoor.SetValue("1");
 
 	g_flServerCurTime = gpGlobals->curtime;
 

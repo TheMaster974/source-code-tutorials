@@ -396,7 +396,6 @@ $Project
 		$File	"game.cpp"
 		$File	"game.h"
 		$File	"game_ui.cpp"
-		$File	"gameinterface.cpp"
 		$File	"gameinterface.h"
 		$File	"$SRCDIR\game\shared\gamemovement.cpp"
 		$File	"$SRCDIR\game\shared\gamemovement.h"
@@ -1046,5 +1045,28 @@ $Project
 
 		$ImpLibexternal steam_api	[!$WIN64]
 		$ImpLibexternal steam_api64	[$WIN64]
+	}
+
+	$Folder "Tutorials"
+	{
+		$File "tutorials\blacklist.h" [!$TF]
+		$File "gameinterface.cpp"
+		$File "episodic\grenade_hopwire.cpp" [!$TF]
+		$File "episodic\grenade_hopwire.h" [!$TF]
+		$File "hl2mp\grenade_satchel.cpp" [!$TF]
+		$File "hl2mp\grenade_satchel.h" [!$TF]
+		$File "hl2mp\grenade_tripmine.cpp" [!$TF]
+		$File "hl2mp\grenade_tripmine.h" [!$TF]
+		$File "hl2mp\hl2mp_gameinterface.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\hl2mp_gamerules.cpp" [!$TF]
+		$File "hl2mp\hl2mp_player.cpp" [!$TF]
+		$File "tf\tf_gameinterface.cpp" [$TF]
+		$File "episodic\weapon_hopwire.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_hl2mpbase_machinegun.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_hl2mpbase_machinegun.h" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_shotgun.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_slam.cpp" [!$TF]
+		$File "$SRCDIR\game\shared\hl2mp\weapon_slam.h" [!$TF]
+		$File "$SRCDIR\game\shared\tutorials\weapon_smg2.cpp" [!$TF]
 	}
 }

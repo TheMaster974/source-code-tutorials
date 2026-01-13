@@ -1,8 +1,8 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: SLAM
 //
-// $NoKeywords: $
+// $NoKeywords: $FixedByTheMaster974
 //
 //=============================================================================//
 
@@ -33,6 +33,7 @@ BEGIN_DATADESC( CSatchelCharge )
 
 	// Function Pointers
 	DEFINE_THINKFUNC( SatchelThink ),
+	DEFINE_THINKFUNC(DeathThink), // Addition.
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Explode", InputExplode),
@@ -73,7 +74,15 @@ void CSatchelCharge::Spawn( void )
 	SetThink( &CSatchelCharge::SatchelThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
-	m_flDamage		= sk_plr_dmg_satchel.GetFloat();
+// ---------------------------------------------------------------------
+// Modified so the Satchel does different damage dependent on the owner.
+// ---------------------------------------------------------------------
+		// m_flDamage		= sk_plr_dmg_satchel.GetFloat();
+	if (GetOwnerEntity() && GetOwnerEntity()->IsPlayer())
+		m_flDamage = sk_plr_dmg_satchel.GetFloat();
+	else
+		m_flDamage = sk_npc_dmg_satchel.GetFloat();
+
 	m_DmgRadius		= sk_satchel_radius.GetFloat();
 	m_takedamage	= DAMAGE_YES;
 	m_iHealth		= 1;
@@ -194,6 +203,75 @@ void CSatchelCharge::BounceSound( void )
 	{
 		m_flNextBounceSoundTime = gpGlobals->curtime + 0.1;
 	}
+}
+
+// --------------------------------------------------------------------------
+// This allows the satchel charge to be destroyed and damage stuff around it.
+// --------------------------------------------------------------------------
+int CSatchelCharge::OnTakeDamage(const CTakeDamageInfo& inputInfo)
+{
+	VPhysicsTakeDamage(inputInfo);
+
+	// Should certain damage types NOT blow up the satchel charge?
+	if ((inputInfo.GetDamageType() & (DMG_PHYSGUN)))
+		return 0;
+
+	m_iHealth = 0;
+	Event_Killed(CTakeDamageInfo(this, this, 100, GIB_NORMAL));
+
+	return BaseClass::OnTakeDamage(inputInfo);
+}
+
+// ---------------------------------------------------
+// This triggers when the satchel charge is detonated.
+// ---------------------------------------------------
+void CSatchelCharge::Event_Killed(const CTakeDamageInfo& info)
+{
+	m_takedamage = DAMAGE_NO;
+	if (!m_pMyWeaponSLAM->AnyUndetonatedCharges())
+	{
+		m_pMyWeaponSLAM->m_bNeedDetonatorHolster = true;
+		m_pMyWeaponSLAM->HasAnyAmmo();
+	}
+
+	SetThink(&CSatchelCharge::DeathThink);
+	SetNextThink(gpGlobals->curtime + 0.1);
+}
+
+// ---------------------
+// Creates an explosion!
+// ---------------------
+void CSatchelCharge::DeathThink(void)
+{
+	UTIL_ScreenShake(GetAbsOrigin(), 25.0, 150.0, 1.0, 750, SHAKE_START);
+
+	ExplosionCreate(GetAbsOrigin() + Vector(0, 0, 16), GetAbsAngles(), GetThrower(), m_flDamage,
+		m_DmgRadius, SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
+
+	UTIL_Remove(this);
+}
+
+// --------------------------------------------------------
+// This allows players to pick up deployed satchel charges.
+// --------------------------------------------------------
+void CSatchelCharge::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+{
+	if (useType == USE_TOGGLE)
+	{
+		CBasePlayer* pPlayer = ToBasePlayer(pActivator);
+		if (pPlayer)
+		{
+			if (pPlayer->GetAmmoCount("SLAM") < 5) // sk_max_slam.GetInt()
+			{
+				// Remove the satchel charge and give ammo back to the player.
+				pPlayer->GiveAmmo(1, "SLAM");
+				UTIL_Remove(this);
+				return;
+			}
+		}
+	}
+
+	BaseClass::Use(pActivator, pCaller, useType, value);
 }
 
 //-----------------------------------------------------------------------------
