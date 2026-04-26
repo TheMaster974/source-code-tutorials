@@ -218,9 +218,6 @@ $Project "Server (HL2)"
 			$File	"weapon_cubemap.cpp"
 			$File	"hl2\weapon_physcannon.h"
 			$File	"hl2\weapon_rpg.h"
-			$File	"hl2\weapon_smg1.cpp"
-			$File	"hl2\weapon_stunstick.cpp"
-			$File	"hl2\weapon_stunstick.h"
 
 			$Folder	"Unused"
 			{

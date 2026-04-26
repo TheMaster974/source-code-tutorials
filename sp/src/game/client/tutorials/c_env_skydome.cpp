@@ -8,7 +8,7 @@
 #include "rendertexture.h"
 #include "viewrender.h"
 #include "fmtstr.h"
-#include "mathlib\mathlib.h"
+#include "mathlib/mathlib.h"
 #include <KeyValues.h>
 
 #include "tier0/memdbgon.h"

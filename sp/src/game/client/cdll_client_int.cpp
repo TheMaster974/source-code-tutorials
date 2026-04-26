@@ -931,7 +931,7 @@ void ModBase_InitBackground()
 	g_PModBase_BikBackground_bUse = _BackgroundConfig->GetBool("UseVideoBackground", false);
 
 	// The ConVar to check for the backgrounds
-	g_PModBase_BikBackground_szConvarName = _strdup(_BackgroundConfig->GetString("BackgroundConvar", "sv_unlockedchapters"));
+	g_PModBase_BikBackground_szConvarName = strdup(_BackgroundConfig->GetString("BackgroundConvar", "sv_unlockedchapters"));
 
 	// Get the load type
 	const char* LoadType = _BackgroundConfig->GetString("BackgroundLoadType", "UseConVar");
@@ -953,7 +953,7 @@ void ModBase_InitBackground()
 
 		// Set ConVar to sv_unlockedchapters
 		free((char*)g_PModBase_BikBackground_szConvarName);
-		g_PModBase_BikBackground_szConvarName = _strdup("sv_unlockedchapters");
+		g_PModBase_BikBackground_szConvarName = strdup("sv_unlockedchapters");
 	}
 
 	// Now create the actual data for the bik backgrounds
@@ -963,7 +963,7 @@ void ModBase_InitBackground()
 		PModBase_BikBackgroundHolder* holder = new PModBase_BikBackgroundHolder;
 
 		// Get the background name and min value
-		holder->bik_video_name = _strdup(data->GetString("BackgroundVideoName"));
+		holder->bik_video_name = strdup(data->GetString("BackgroundVideoName"));
 
 		// The min value isn't used for ComparePreviousMap. For that it uses 'IsDefault'
 		if (g_PModBase_BikBackground_LoadType == ModBase_BikBackgroundLoadType::ComparePreviousMap)
@@ -1000,10 +1000,10 @@ void ModBase_InitBackground()
 	// Should this mod use an image for the logo or not?
 	g_PModBase_BikBackground_bUseTextureLogo = _BackgroundConfig->GetBool("UseImageLogo", false);
 	g_PModBase_BikBackground_bUseTextureLogoName = _BackgroundConfig->GetString("ImageLogoName", nullptr);
-	g_PModBase_BikBackground_bUseTextureLogoColor = _strdup(_BackgroundConfig->GetString("ImageLogoColor", "255 255 255 255"));
+	g_PModBase_BikBackground_bUseTextureLogoColor = strdup(_BackgroundConfig->GetString("ImageLogoColor", "255 255 255 255"));
 
 	// Alloc memory for the string
-	g_PModBase_BikBackground_bUseTextureLogoName = g_PModBase_BikBackground_bUseTextureLogoName ? _strdup(g_PModBase_BikBackground_bUseTextureLogoName) : nullptr;
+	g_PModBase_BikBackground_bUseTextureLogoName = g_PModBase_BikBackground_bUseTextureLogoName ? strdup(g_PModBase_BikBackground_bUseTextureLogoName) : nullptr;
 
 	// Get the logo position offset
 	g_PModBase_BikBackground_bUseTextureLogoPosX = _BackgroundConfig->GetInt("ImageLogoX", 0);

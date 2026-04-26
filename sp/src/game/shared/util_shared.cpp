@@ -1177,7 +1177,7 @@ const char* UTIL_GetActiveHolidayString()
 }
 
 #if defined (NEW_LOADING_SCREENS) // Obsidian Conflict Team code
-std::string UTIL_GetCurrentMap(bool bFullPath)
+const char* UTIL_GetCurrentMap(bool bFullPath)
 {
 	static char sMap[MAX_PATH] = "\0";
 

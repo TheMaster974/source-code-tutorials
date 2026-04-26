@@ -180,7 +180,7 @@ void CMapLoadBG::ApplySchemeSettings(IScheme* pScheme)
 	{
 		m_pProgressBar->SetAlpha(100);
 		m_pProgressBar->SetPaintBorderEnabled(false);
-		m_pProgressBar->SetSize(max(256, ScreenWidth() * 0.66f), max(8, (ScreenHeight() / 100)));
+		m_pProgressBar->SetSize(Q_max(256, ScreenWidth() * 0.66f), Q_max(8, (ScreenHeight() / 100)));
 		m_pProgressBar->SetPos(ScreenWidth() / 6, ScreenHeight() * 0.9f);
 
 		if (m_pProgressPercentage)
@@ -206,7 +206,7 @@ void CMapLoadBG::ApplySchemeSettings(IScheme* pScheme)
 	{
 		m_pProgressWheel->SetAlpha(100);
 		m_pProgressWheel->SetPaintBorderEnabled(false);
-		m_pProgressWheel->SetSize(min(64, ScreenWidth() * 0.1), min(64, ScreenWidth() * 0.1));
+		m_pProgressWheel->SetSize(Q_min(64, ScreenWidth() * 0.1), Q_min(64, ScreenWidth() * 0.1));
 		m_pProgressWheel->SetPos((ScreenWidth()) - (m_pProgressWheel->GetWide() * 1.5f), (ScreenHeight()) - (m_pProgressWheel->GetTall() * 1.5f));
 		m_pProgressWheel->SetBgImage("loading/ui/loading_wheel_bg");
 		m_pProgressWheel->SetFgImage("loading/ui/loading_wheel_fg");

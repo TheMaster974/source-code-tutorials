@@ -12,7 +12,7 @@
 #include	"basehlcombatweapon.h"
 #include	"basecombatcharacter.h"
 #include	"ai_basenpc.h"
-#include	"AI_Memory.h"
+#include	"ai_memory.h"
 #include	"player.h"
 #include	"gamerules.h"		// For g_pGameRules
 #include	"weapon_molotov.h"

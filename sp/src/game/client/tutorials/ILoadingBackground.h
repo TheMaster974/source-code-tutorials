@@ -21,14 +21,16 @@
 #include "ienginevgui.h"
 #include <KeyValues.h>
 // OC Team code
+#include "tier0/valve_minmax_off.h" // Currently doesn't help on Linux :(
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "tier0/valve_minmax_on.h"
 #include "filesystem.h"
 //
-#define ENABLE_LOADING_TIP // if defined, adds an element for tip text
-#define ENABLE_CUSTOM_LOADING_BAR // if defined, overrides the loading bar, hides the original one
-#define ENABLE_CUSTOM_LOADING_WHEEL // if defined, a circular progress bar will appear in bottom right corner
+#define ENABLE_LOADING_TIP 1 // if defined, adds an element for tip text
+#define ENABLE_CUSTOM_LOADING_BAR 1 // if defined, overrides the loading bar, hides the original one
+#define ENABLE_CUSTOM_LOADING_WHEEL 1 // if defined, a circular progress bar will appear in bottom right corner
 
 //-----------------------------------------------------------------------------
 // Purpose:

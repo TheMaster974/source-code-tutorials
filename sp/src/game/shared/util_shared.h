@@ -26,10 +26,7 @@
 #include "portal_util_shared.h"
 #endif
 
-#define NEW_LOADING_SCREENS
-#if defined (NEW_LOADING_SCREENS)
-#include <string>
-#endif
+#define NEW_LOADING_SCREENS 1
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
@@ -605,6 +602,11 @@ bool				UTIL_IsHolidayActive( /*EHoliday*/ int eHoliday );
 const char		   *UTIL_GetActiveHolidayString();
 
 #if defined NEW_LOADING_SCREENS // Obsidian Conflict Team code
-std::string UTIL_GetCurrentMap(bool bFullPath = false);
+const char* UTIL_GetCurrentMap(bool bFullPath = false);
+// HACK HACK!!! For some reason, the min/max macros used in ILoadingBackground.cpp do NOT
+// work correctly, even when using the valve_minmax_on/off includes. I'm adding this to ensure
+// the correct min/max macros are used, even if it is highly inefficient! -TheMaster974
+#define Q_max(a,b) (((a) > (b)) ? (a) : (b))
+#define Q_min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 #endif // UTIL_SHARED_H

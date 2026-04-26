@@ -168,8 +168,8 @@ static size_t MatchRangeAndAdvance(const char* s1, const char* token)
 
 	size_t startLen = dash - token;
 	if (startLen >= sizeof(startBuf)) startLen = sizeof(startBuf) - 1;
-	strncpy_s(startBuf, sizeof(startBuf), token, startLen);
-	strcpy_s(endBuf, sizeof(endBuf), dash + 1);
+	Q_strncpy(startBuf, token, startLen);
+	Q_strcpy(endBuf, dash + 1);
 
 	if (isdigit(startBuf[0]) && isdigit(endBuf[0]))
 	{
@@ -178,17 +178,17 @@ static size_t MatchRangeAndAdvance(const char* s1, const char* token)
 		if (i == 0) return 0;
 
 		char valBuf[32];
-		strncpy_s(valBuf, sizeof(valBuf), s1, i);
+		Q_strncpy(valBuf, s1, i);
 		valBuf[i] = '\0';
-		int val = atoi(valBuf);
+		int val = Q_atoi(valBuf);
 
-		int start = atoi(startBuf);
-		int end = atoi(endBuf);
+		int start = Q_atoi(startBuf);
+		int end = Q_atoi(endBuf);
 		if (start > end) { int tmp = start; start = end; end = tmp; }
 
 		// Handle leading zero length consistency
-		size_t lenRangeMin = strlen(startBuf);
-		size_t lenRangeMax = strlen(endBuf);
+		size_t lenRangeMin = Q_strlen(startBuf);
+		size_t lenRangeMax = Q_strlen(endBuf);
 
 		if (val >= start && val <= end)
 		{
@@ -231,14 +231,14 @@ static bool MatchOptionalString(const char* s1, const char** patternPtr, bool Ca
 	if (*pattern == '}') pattern++;
 
 	char local[256];
-	if (strcpy_s(local, sizeof(local), buffer) != 0) return false;
+//	if (strcpy_s(local, sizeof(local), buffer) != 0) return false;
+	Q_strcpy(local, buffer);
 
-	char* context = NULL;
-	char* token = strtok_s(local, "|", &context);
+	char* token = strtok(local, "|");
 
 	while (token)
 	{
-		size_t len = strlen(token);
+		size_t len = Q_strlen(token);
 		size_t consumed = 0;
 
 		if (strchr(token, '-') && !InputHasControlChar(s1))
@@ -252,7 +252,7 @@ static bool MatchOptionalString(const char* s1, const char** patternPtr, bool Ca
 		}
 		else
 		{
-			bool match = (CaseSensitive) ? (strncmp(s1, token, len) == 0) : (_strnicmp(s1, token, len) == 0);
+			bool match = (CaseSensitive) ? (Q_strncmp(s1, token, len) == 0) : (Q_strnicmp(s1, token, len) == 0);
 			if (match)
 			{
 				*patternPtr = pattern;
@@ -261,7 +261,7 @@ static bool MatchOptionalString(const char* s1, const char** patternPtr, bool Ca
 			}
 		}
 
-		token = strtok_s(NULL, "|", &context);
+		token = strtok(NULL, "|");
 	}
 
 	*patternPtr = pattern;
@@ -286,14 +286,14 @@ static bool MatchSpecialWildcard(const char* s1, const char** patternPtr, bool C
 	if (*pattern == ']') pattern++;
 
 	char local[256];
-	if (strcpy_s(local, sizeof(local), buffer) != 0) return false;
+//	if (strcpy_s(local, sizeof(local), buffer) != 0) return false;
+	Q_strcpy(local, buffer);
 
-	char* context = NULL;
-	char* token = strtok_s(local, "|", &context);
+	char* token = strtok(local, "|");
 
 	while (token)
 	{
-		size_t len = strlen(token);
+		size_t len = Q_strlen(token);
 		size_t consumed = 0;
 
 		if (strchr(token, '-') && !InputHasControlChar(s1))
@@ -307,7 +307,7 @@ static bool MatchSpecialWildcard(const char* s1, const char** patternPtr, bool C
 		}
 		else
 		{
-			bool match = (CaseSensitive) ? (strncmp(s1, token, len) == 0) : (_strnicmp(s1, token, len) == 0);
+			bool match = (CaseSensitive) ? (Q_strncmp(s1, token, len) == 0) : (Q_strnicmp(s1, token, len) == 0);
 			if (match)
 			{
 				*patternPtr = pattern;
@@ -316,7 +316,7 @@ static bool MatchSpecialWildcard(const char* s1, const char** patternPtr, bool C
 			}
 		}
 
-		token = strtok_s(NULL, "|", &context);
+		token = strtok(NULL, "|");
 	}
 
 	return false;
@@ -335,8 +335,8 @@ bool StringMatchesCriteria(const char* s1, const char* pattern, bool CaseSensiti
 	{
 		char left[512], right[512];
 		size_t leftLen = pipe2 - pattern;
-		strncpy_s(left, sizeof(left), pattern, leftLen);
-		strcpy_s(right, sizeof(right), pipe2 + 1);
+		Q_strncpy(left, pattern, leftLen);
+		Q_strcpy(right, pipe2 + 1);
 
 		if (StringMatchesCriteria(s1, left, CaseSensitive) || StringMatchesCriteria(s1, right, CaseSensitive))
 			return true;
@@ -347,8 +347,8 @@ bool StringMatchesCriteria(const char* s1, const char* pattern, bool CaseSensiti
 	{
 		char leftS1[512], rightS1[512];
 		size_t leftLen = pipe1 - s1;
-		strncpy_s(leftS1, sizeof(leftS1), s1, leftLen);
-		strcpy_s(rightS1, sizeof(rightS1), pipe1 + 1);
+		Q_strncpy(leftS1, s1, leftLen);
+		Q_strcpy(rightS1, pipe1 + 1);
 
 		if (StringMatchesCriteria(leftS1, pattern, CaseSensitive) || StringMatchesCriteria(rightS1, pattern, CaseSensitive))
 			return true;
