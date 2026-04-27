@@ -30,8 +30,8 @@ enum class ModBase_BikBackgroundLoadType
 //bik background song info
 struct BikBackground_SongInfo_t
 {
-	const char* songname = nullptr;
-	float songvolume = 0.0f;
+	const char* songname; // = nullptr
+	float songvolume; // = 0.0f
 };
 
 //boolean used to check if the main menu background should use a bik video or the
@@ -56,11 +56,11 @@ extern const char* g_PModBase_BikBackground_szConvarName;
 //the structure that holds all the menu background items
 struct PModBase_BikBackgroundHolder
 {
-	const char* bik_video_name = nullptr;			//background bik video name
+	const char* bik_video_name;			//background bik video name, = nullptr
 	CUtlVector<BikBackground_SongInfo_t*> Songs;	//chooses a random song out of all these songs.
-	int minvalue = 0;								//min value convar needs to be for this background to play
-	const char* MapCriteria = nullptr;				//ComparePreviousMap ONLY: The criteria the previous map name must have for this background to play.
-	bool IsDefaultIfPrevMapIsEmpty = false;
+	int minvalue;								//min value convar needs to be for this background to play, = 0
+	const char* MapCriteria;				//ComparePreviousMap ONLY: The criteria the previous map name must have for this background to play, = nullptr.
+	bool IsDefaultIfPrevMapIsEmpty; // = false
 };
 
 //the array of bik background holders

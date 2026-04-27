@@ -11,7 +11,7 @@
 #include "c_ai_basenpc.h"
 #include "in_buttons.h"
 #include "collisionutils.h"
-#include "engine/ienginesound.h" // Addition.
+#include "engine/IEngineSound.h" // Addition.
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

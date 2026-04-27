@@ -67,8 +67,6 @@ extern ConVar replay_rendersetting_renderglow;
 
 #include "clienteffectprecachesystem.h" // Addition.
 
-#define NEW_LOADING_SCREENS
-
 #if defined (NEW_LOADING_SCREENS)
 #include "GameUI/IGameUI.h"
 #include "tutorials/ILoadingBackground.h"

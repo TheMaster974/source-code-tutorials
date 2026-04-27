@@ -41,8 +41,12 @@ class CMapLoadBG : public vgui::EditablePanel
 public:
 
 	// OC
-	using string_list_t = std::vector<std::string>;
-	using string_image_list_t = std::unordered_map<std::string, string_list_t>;
+//	using string_list_t = std::vector<std::string>;
+//	using string_image_list_t = std::unordered_map<std::string, string_list_t>;
+
+	// Fixes compilation issues on Linux.
+	typedef std::vector<std::string> string_list_t;
+	typedef std::unordered_map<std::string, string_list_t> string_image_list_t;
 	//
 	// Construction
 	CMapLoadBG(char const* panelName);

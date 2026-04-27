@@ -717,7 +717,7 @@ void ModBase_BikMenu::ApplySchemeSettings(IScheme* pScheme)
 	vgui::IScheme* scheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetScheme("ClientScheme"));
 	if (!scheme)
 	{
-		BikBackgroundDebugMsg("Background BIK Video Error: Failed to get ClientScheme for '" __FUNCSIG__ "' Main menu logo will NOT Show\n");
+		BikBackgroundDebugMsg("Background BIK Video Error: Failed to get ClientScheme for '%s' Main menu logo will NOT Show\n", __FUNCTION__);
 		return;
 	}
 
