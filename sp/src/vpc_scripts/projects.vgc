@@ -24,14 +24,11 @@ $Project "fgdlib"
 	"fgdlib\fgdlib.vpc" [$WIN32]
 }
 
-// -----------------------------------------------------------------------------------------------------
-// If you want to use this on Linux, you need to use the Docker method and remove the "$WIN32 &&" parts.
-// -----------------------------------------------------------------------------------------------------
 $Project "gamepadui"
 {
-	"game\gamepadui\gamepadui_hl2.vpc"	[$WIN32 && $HL2]
-	"game\gamepadui\gamepadui_episodic.vpc"	[$WIN32 && $EPISODIC]
-	"game\gamepadui\gamepadui_portal.vpc"	[$WIN32 && $PORTAL]
+	"game\gamepadui\gamepadui_hl2.vpc"	[$HL2]
+	"game\gamepadui\gamepadui_episodic.vpc"	[$EPISODIC]
+	"game\gamepadui\gamepadui_portal.vpc"	[$PORTAL]
 }
 
 $Project "game_shader_dx9"

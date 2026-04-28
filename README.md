@@ -12,9 +12,9 @@ A fork of the 2013 SDK, with additions/modifications from my YouTube videos link
 
 ## Linux Issues
 
-At the time of updating this readme, Source SDK Base 2013 Singleplayer does NOT work on Linux! I will try to make Valve aware of this issue, for now there is a hacky fix which can be found here: https://github.com/ValveSoftware/portal2/issues/451#issuecomment-2632833249 and I covered the fix in [this video](https://youtu.be/98_fxgSN-Sc).
+At the time of updating this readme, Source SDK Base 2013 Singleplayer does NOT work on Linux! I will try to make Valve aware of this issue, for now there is a hacky fix which can be found [here](https://github.com/ValveSoftware/portal2/issues/451#issuecomment-2632833249) and I covered the fix in [this video](https://youtu.be/98_fxgSN-Sc). Interact with my post [here](https://github.com/ValveSoftware/source-sdk-2013/issues/1722) if you want this problem resolved!
 
-Also, the Gamepad UI code *can* be compiled on Linux, but only via the 'docker'/'container' method. If you want to enable this, go to the sp/src/vpc_scripts/projects.vgc file and remove the `WIN32 &&` parts to enable the projects on Linux. I have also performed a few minor changes to some of the files that caused issues on Linux but not on Windows i.e. (client/server)_(hl2/episodic).vpc files.
+Also, the Gamepad UI code has been modified so it can be compiled on Linux regardless of the method you decide to use (chroot/docker), if you have issues with missing header files regarding SDL, I would advise doing `sudo apt-get install libsdl2-dev` on Debian-based Linux or `sudo pacman -S sdl2` on Arch-based Linux. If you use the chroot method, there will be a bunch of warning messages that will look like errors regarding the `swap` command, don't worry about it! The code will compile without any errors. Please be advised that I have only tested this on Linux Mint and Arch Linux and I haven't experienced any issues. I have also performed a few minor changes to some of the files that caused issues on Linux but not on Windows i.e. (client/server)_(hl2/episodic).vpc files.
 
 ## Source SDK License Information
 
