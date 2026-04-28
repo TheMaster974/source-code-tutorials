@@ -5412,6 +5412,31 @@ void Panel::PostMessageToAllSiblings( KeyValues *msg, float delaySeconds /*= 0.0
 	msg->deleteThis();
 }
 
+void vgui::PostMessageToSiblingPanelsOfType( Panel *source, KeyValues *msg, float delaySeconds, PanelSiblingFilter_t filter )
+{
+	if ( source )
+	{
+		Panel *parent = source->GetParent();
+		if ( parent )
+		{
+			int nChildCount = parent->GetChildCount();
+			for ( int i = 0; i < nChildCount; ++i )
+			{
+				Panel *sibling = parent->GetChild( i );
+				if ( sibling == source )
+					continue;
+
+				if ( sibling && filter && filter( sibling ) )
+				{
+					source->PostMessage( sibling->GetVPanel(), msg->MakeCopy(), delaySeconds );
+				}
+			}
+		}
+	}
+
+	msg->deleteThis();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Safe call to post a message to a child by name
 //-----------------------------------------------------------------------------

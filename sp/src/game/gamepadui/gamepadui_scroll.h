@@ -8,6 +8,10 @@ class GamepadUIScrollState
 {
 public:
     GamepadUIScrollState()
+        : m_flScrollTarget( 0.0f )
+        , m_flScrollProgress( 0.0f )
+        , m_flScrollLastScrolledValue( 0.0f )
+        , m_flScrollLastScrolledTime( 0.0f )
     {
     }
 
@@ -46,10 +50,10 @@ public:
     }
 
 private:
-    float m_flScrollTarget            = 0.0f;
-    float m_flScrollProgress          = 0.0f;
-    float m_flScrollLastScrolledValue = 0.0f;
-    float m_flScrollLastScrolledTime  = 0.0f;
+    float m_flScrollTarget;
+    float m_flScrollProgress;
+    float m_flScrollLastScrolledValue;
+    float m_flScrollLastScrolledTime;
 };
 
 #endif // GAMEPADUI_SCROLL_H

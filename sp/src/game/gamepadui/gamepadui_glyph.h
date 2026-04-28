@@ -20,6 +20,9 @@ class GamepadUIGlyph
 public:
     GamepadUIGlyph()
     {
+#ifdef HL2_RETAIL
+        m_eActionOrigin = k_EInputActionOrigin_None;
+#endif // HL2_RETAIL
         m_nOriginTextures[0] = -1;
         m_nOriginTextures[1] = -1;
     }
@@ -174,7 +177,7 @@ public:
 private:
 
 #ifdef HL2_RETAIL
-    EInputActionOrigin m_eActionOrigin = k_EInputActionOrigin_None;
+    EInputActionOrigin m_eActionOrigin;
 #endif // HL2_RETAIL
 
     int m_nOriginTextures[2];

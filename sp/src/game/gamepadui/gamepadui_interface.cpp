@@ -13,6 +13,23 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( GamepadUI, IGamepadUI, GAMEPADUI_INTERFACE_VE
 
 GamepadUI *GamepadUI::s_pGamepadUI = NULL;
 
+GamepadUI::GamepadUI()
+    : m_pEngineSound( NULL )
+    , m_pEngineVGui( NULL )
+    , m_pGameUIFuncs( NULL )
+    , m_pMaterialSystem( NULL )
+    , m_pMaterialSystemSurface( NULL )
+    , m_pSoundEmitterSystemBase( NULL )
+    , m_pEngineClient( NULL )
+    , m_pRenderView( NULL )
+    , m_pGameUI( NULL )
+    , m_pAchievementMgr( NULL )
+    , m_pAnimationController( NULL )
+    , m_pBasePanel( NULL )
+    , m_flScreenRatio( 1.0f )
+{
+}
+
 GamepadUI& GamepadUI::GetInstance()
 {
     if ( !s_pGamepadUI )

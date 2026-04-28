@@ -107,10 +107,26 @@ ifeq ($(OS),Linux)
 	endif
 
 	CCACHE := $(SRCROOT)/devtools/bin/linux/ccache
+	ifneq (,$(filter gamepadui_%,$(NAME)))
+		ifeq ($(shell $(CCACHE) --version > /dev/null 2>&1 && echo 1),)
+			CCACHE :=
+			VALVE_BINDIR := /usr/bin/
+			GCC_VER :=
+		endif
+	endif
 
 	ifeq ($(origin GCC_VER), undefined)
 	GCC_VER=-4.6
 	endif
+	
+	ifneq (,$(filter gamepadui_%,$(NAME)))
+		ifeq ($(shell printf 'enum class E { A }; using T = E; struct S { int x = 0; };' | $(CCACHE) $(VALVE_BINDIR)g++$(GCC_VER) -std=gnu++0x -x c++ -fsyntax-only - > /dev/null 2>&1 && echo 1),)
+			CCACHE :=
+			VALVE_BINDIR := /usr/bin/
+			GCC_VER :=
+		endif
+	endif
+	
 	ifeq ($(origin AR), default)
 		AR = $(VALVE_BINDIR)ar crs
 	endif

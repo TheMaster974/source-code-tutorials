@@ -163,21 +163,21 @@ public:
 
 protected:
 
-    ButtonState m_ePreviousState = ButtonStates::Out;
+    ButtonState m_ePreviousState;
 
-    bool m_bCursorOver = false;
-    bool m_bControllerPressed = false;
-    bool m_bNavigateTo = false;
-    bool m_bForwardToParent = false;
-    bool m_bMouseNavigate = true;
+    bool m_bCursorOver;
+    bool m_bControllerPressed;
+    bool m_bNavigateTo;
+    bool m_bForwardToParent;
+    bool m_bMouseNavigate;
 
-    float m_flExtraHeight = 0;
-    float m_flCachedExtraHeight = 0;
-    float m_flTargetExtraHeight = 0;
-    float m_flLastExtraHeight = 0;
-    float m_flExtraHeightTime = 0;
+    float m_flExtraHeight;
+    float m_flCachedExtraHeight;
+    float m_flTargetExtraHeight;
+    float m_flLastExtraHeight;
+    float m_flExtraHeightTime;
 
-    FooterButton m_eFooterButton = FooterButtons::None;
+    FooterButton m_eFooterButton;
 
     GamepadUIString m_strButtonText;
     GamepadUIString m_strButtonDescription;
@@ -185,7 +185,7 @@ protected:
 
 public:
 
-    int m_nPriority = 0;
+    int m_nPriority;
 
     GAMEPADUI_BUTTON_ANIMATED_PROPERTY( float, m_flWidth,                "Button.Width",               "392",             SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_BUTTON_ANIMATED_PROPERTY( float, m_flHeight,               "Button.Height",              "40",              SchemeValueTypes::ProportionalFloat );
@@ -208,9 +208,9 @@ public:
     GAMEPADUI_PANEL_PROPERTY( bool, m_CenterX,          "Button.Text.CenterX",     "0", SchemeValueTypes::Bool );
     GAMEPADUI_PANEL_PROPERTY( bool, m_bDescriptionWrap, "Button.Description.Wrap", "1", SchemeValueTypes::Bool );
 
-    vgui::HFont m_hTextFont        = vgui::INVALID_FONT;
-    vgui::HFont m_hTextFontOver    = vgui::INVALID_FONT;
-    vgui::HFont m_hDescriptionFont = vgui::INVALID_FONT;
+    vgui::HFont m_hTextFont;
+    vgui::HFont m_hTextFontOver;
+    vgui::HFont m_hDescriptionFont;
 };
 
 #endif // GAMEPADUI_BUTTON_H

@@ -74,7 +74,7 @@ private:
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterOffsetY, "Chapters.OffsetY", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterSpacing, "Chapters.Spacing", "0", SchemeValueTypes::ProportionalFloat );
 
-    bool m_bCommentaryMode = false;
+    bool m_bCommentaryMode;
 };
 
 class GamepadUIChapterButton : public GamepadUIButton
@@ -241,7 +241,9 @@ static int GetUnlockedChapters()
     return var.IsValid() ? MAX( var.GetInt(), 1 ) : 1;
 }
 
-GamepadUINewGamePanel::GamepadUINewGamePanel( vgui::Panel *pParent, const char* PanelName ) : BaseClass( pParent, PanelName )
+GamepadUINewGamePanel::GamepadUINewGamePanel( vgui::Panel *pParent, const char* PanelName )
+    : BaseClass( pParent, PanelName )
+    , m_bCommentaryMode( false )
 {
     vgui::HScheme hScheme = vgui::scheme()->LoadSchemeFromFile( GAMEPADUI_DEFAULT_PANEL_SCHEME, "SchemePanel" );
     SetScheme( hScheme );

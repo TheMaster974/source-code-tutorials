@@ -115,7 +115,7 @@ private:
     GAMEPADUI_PANEL_PROPERTY( float, m_flFooterMedalSize, "FooterMedal.Current.Size", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_flFooterMedalNextSize, "FooterMedal.Next.Size", "0", SchemeValueTypes::ProportionalFloat );
 
-    vgui::HFont m_hGoalFont = vgui::INVALID_FONT;
+    vgui::HFont m_hGoalFont;
 
     GamepadUIImage m_CachedMedals[2];
     char m_szCachedMedalNames[256][2];
@@ -130,6 +130,7 @@ public:
         : BaseClass( pParent, pActionSignalTarget, pSchemeFile, pCommand, pText, pDescription )
         , m_Image( pBonusImage )
         , m_LockIcon( "gamepadui/lockylock" )
+        , m_BonusMapDesc()
     {
         bCompleted[0] = false;
         bCompleted[1] = false;
@@ -140,6 +141,7 @@ public:
         : BaseClass( pParent, pActionSignalTarget, pSchemeFile, pCommand, pText, pDescription )
         , m_Image( pBonusImage )
         , m_LockIcon( "gamepadui/lockylock" )
+        , m_BonusMapDesc()
     {
         bCompleted[0] = false;
         bCompleted[1] = false;
@@ -277,7 +279,7 @@ private:
 
     static GamepadUIBonusButton *s_pLastBonusButton;
 
-    BonusMapDescription_t m_BonusMapDesc = {};
+    BonusMapDescription_t m_BonusMapDesc;
 
     GAMEPADUI_PANEL_PROPERTY( Color, m_colProgressColor, "Button.Background.Progress", "255 0 0 255", SchemeValueTypes::Color );
     GAMEPADUI_PANEL_PROPERTY( float, m_flProgressHeight, "Button.Progress.Height",     "1", SchemeValueTypes::ProportionalFloat );
@@ -292,7 +294,9 @@ private:
 
 GamepadUIBonusButton* GamepadUIBonusButton::s_pLastBonusButton = NULL;
 
-GamepadUIBonusMapsPanel::GamepadUIBonusMapsPanel( vgui::Panel *pParent, const char* PanelName ) : BaseClass( pParent, PanelName )
+GamepadUIBonusMapsPanel::GamepadUIBonusMapsPanel( vgui::Panel *pParent, const char* PanelName )
+    : BaseClass( pParent, PanelName )
+    , m_hGoalFont( vgui::INVALID_FONT )
 {
     vgui::HScheme hScheme = vgui::scheme()->LoadSchemeFromFile( GAMEPADUI_DEFAULT_PANEL_SCHEME, "SchemePanel" );
     SetScheme( hScheme );

@@ -45,8 +45,8 @@ private:
 
     GamepadUIScrollState m_ScrollState;
 
-    int m_nTotalAchievements = 0;
-    int m_nUnlockedAchievements = 0;
+    int m_nTotalAchievements;
+    int m_nUnlockedAchievements;
 
     GAMEPADUI_PANEL_PROPERTY( float, m_AchievementsFade, "Achievements.Fade", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_AchievementsOffsetX, "Achievements.OffsetX", "0", SchemeValueTypes::ProportionalFloat );
@@ -62,12 +62,20 @@ public:
     GamepadUIAchievement( vgui::Panel* pParent, vgui::Panel* pActionSignalTarget, const char* pSchemeFile, const char* pCommand, const char* pText, const char* pDescription, const char *pChapterImage )
         : BaseClass( pParent, pActionSignalTarget, pSchemeFile, pCommand, pText, pDescription )
         , m_Image( pChapterImage )
+        , m_flProgress( 0.0f )
+        , m_nCount( 0 )
+        , m_nGoal( 0 )
+        , m_hProgressFont( vgui::INVALID_FONT )
     {
     }
 
     GamepadUIAchievement( vgui::Panel* pParent, vgui::Panel* pActionSignalTarget, const char* pSchemeFile, const char* pCommand, const wchar* pText, const wchar* pDescription, const char *pChapterImage )
         : BaseClass( pParent, pActionSignalTarget, pSchemeFile, pCommand, pText, pDescription )
         , m_Image( pChapterImage )
+        , m_flProgress( 0.0f )
+        , m_nCount( 0 )
+        , m_nGoal( 0 )
+        , m_hProgressFont( vgui::INVALID_FONT )
     {
     }
 
@@ -136,11 +144,11 @@ public:
 private:
     GamepadUIImage m_Image;
 
-    float m_flProgress = 0.0f;
-    int m_nCount = 0;
-    int m_nGoal = 0;
+    float m_flProgress;
+    int m_nCount;
+    int m_nGoal;
 
-    vgui::HFont m_hProgressFont = vgui::INVALID_FONT;
+    vgui::HFont m_hProgressFont;
 
     GAMEPADUI_PANEL_PROPERTY( Color, m_colProgressColor,   "Button.Background.Progress",   "255 0 0 255", SchemeValueTypes::Color );
     GAMEPADUI_PANEL_PROPERTY( Color, m_colUnprogressColor, "Button.Background.Unprogress", "255 0 0 255", SchemeValueTypes::Color );
@@ -150,7 +158,10 @@ private:
     GAMEPADUI_PANEL_PROPERTY( float, m_flProgressOffsetX, "Button.Progress.OffsetX", "0", SchemeValueTypes::ProportionalFloat );
 };
 
-GamepadUIAchievementsPanel::GamepadUIAchievementsPanel( vgui::Panel *pParent, const char* pPanelName ) : BaseClass( pParent, pPanelName )
+GamepadUIAchievementsPanel::GamepadUIAchievementsPanel( vgui::Panel *pParent, const char* pPanelName )
+    : BaseClass( pParent, pPanelName )
+    , m_nTotalAchievements( 0 )
+    , m_nUnlockedAchievements( 0 )
 {
     vgui::HScheme hScheme = vgui::scheme()->LoadSchemeFromFile( GAMEPADUI_DEFAULT_PANEL_SCHEME, "SchemePanel" );
     SetScheme( hScheme );

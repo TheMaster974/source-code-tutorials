@@ -14,16 +14,48 @@
 
 GamepadUIButton::GamepadUIButton( vgui::Panel *pParent, vgui::Panel* pActionSignalTarget, const char *pSchemeFile, const char *pCommand, const char *pText, const char *pDescription )
     : BaseClass( pParent, "", "", pActionSignalTarget, pCommand )
+    , m_ePreviousState( ButtonStates::Out )
+    , m_bCursorOver( false )
+    , m_bControllerPressed( false )
+    , m_bNavigateTo( false )
+    , m_bForwardToParent( false )
+    , m_bMouseNavigate( true )
+    , m_flExtraHeight( 0.0f )
+    , m_flCachedExtraHeight( 0.0f )
+    , m_flTargetExtraHeight( 0.0f )
+    , m_flLastExtraHeight( 0.0f )
+    , m_flExtraHeightTime( 0.0f )
+    , m_eFooterButton( FooterButtons::None )
     , m_strButtonText( pText )
     , m_strButtonDescription( pDescription )
+    , m_nPriority( 0 )
+    , m_hTextFont( vgui::INVALID_FONT )
+    , m_hTextFontOver( vgui::INVALID_FONT )
+    , m_hDescriptionFont( vgui::INVALID_FONT )
 {
     SetScheme(vgui::scheme()->LoadSchemeFromFile( pSchemeFile, "SchemePanel" ) );
 }
 
 GamepadUIButton::GamepadUIButton( vgui::Panel *pParent, vgui::Panel* pActionSignalTarget, const char *pSchemeFile, const char *pCommand, const wchar_t *pText, const wchar_t *pDescription )
     : BaseClass( pParent, "", "", pActionSignalTarget, pCommand )
+    , m_ePreviousState( ButtonStates::Out )
+    , m_bCursorOver( false )
+    , m_bControllerPressed( false )
+    , m_bNavigateTo( false )
+    , m_bForwardToParent( false )
+    , m_bMouseNavigate( true )
+    , m_flExtraHeight( 0.0f )
+    , m_flCachedExtraHeight( 0.0f )
+    , m_flTargetExtraHeight( 0.0f )
+    , m_flLastExtraHeight( 0.0f )
+    , m_flExtraHeightTime( 0.0f )
+    , m_eFooterButton( FooterButtons::None )
     , m_strButtonText( pText )
     , m_strButtonDescription( pDescription )
+    , m_nPriority( 0 )
+    , m_hTextFont( vgui::INVALID_FONT )
+    , m_hTextFontOver( vgui::INVALID_FONT )
+    , m_hDescriptionFont( vgui::INVALID_FONT )
 {
     SetScheme(vgui::scheme()->LoadSchemeFromFile( pSchemeFile, "SchemePanel" ) );
 }

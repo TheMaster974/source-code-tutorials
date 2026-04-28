@@ -39,9 +39,14 @@
 #endif
 
 class CUtlBuffer;
+class KeyValues;
 
 namespace vgui
 {
+
+class Panel;
+typedef bool (*PanelSiblingFilter_t)( Panel *panel );
+void PostMessageToSiblingPanelsOfType( Panel *source, KeyValues *msg, float delaySeconds, PanelSiblingFilter_t filter );
 
 #if !defined( _X360 )
 #define VGUI_USEDRAGDROP 1
@@ -949,32 +954,17 @@ inline bool	Panel::IsMouseInputDisabledForThisPanel() const
 	return _flags.IsFlagSet( IS_MOUSE_DISABLED_FOR_THIS_PANEL_ONLY );
 }
 
-#ifdef WIN32 // Modification, unfortunately this doesn't seem to work on Linux :(
-// This function cannot be defined here because it requires on a full definition of
-// KeyValues (to call KeyValues::MakeCopy()) whereas the rest of this header file
-// assumes a forward declared definition of KeyValues.
+template< class S >
+inline bool PanelSiblingIsOfType( Panel *panel )
+{
+	return dynamic_cast< S * >( panel ) != NULL;
+}
+
 template< class S >
 inline void Panel::PostMessageToAllSiblingsOfType( KeyValues *msg, float delaySeconds /*= 0.0f*/ )
 {
-	Panel *parent = GetParent();
-	if ( parent )
-	{
-		int nChildCount = parent->GetChildCount();
-		for ( int i = 0; i < nChildCount; ++i )
-		{
-			Panel *sibling = parent->GetChild( i );
-			if ( sibling == this )
-				continue;
-			if ( dynamic_cast< S * >( sibling ) )
-			{
-				PostMessage( sibling->GetVPanel(), msg->MakeCopy(), delaySeconds );
-			}
-		}
-	}
-
-	msg->deleteThis();
+	PostMessageToSiblingPanelsOfType( this, msg, delaySeconds, &PanelSiblingIsOfType< S > );
 }
-#endif
 
 class Button;
 

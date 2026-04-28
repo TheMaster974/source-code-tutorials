@@ -11,9 +11,11 @@ class GamepadUIImage
 {
 public:
     GamepadUIImage()
+        : m_nId( -1 )
     {
     }
     GamepadUIImage( const char* pName )
+        : m_nId( -1 )
     {
         SetImage( pName );
     }
@@ -61,7 +63,7 @@ public:
         return m_nId;
     }
 private:
-    int m_nId = -1;
+    int m_nId;
 };
 
 #endif // GAMEPADUI_IMAGE_H

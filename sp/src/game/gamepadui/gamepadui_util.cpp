@@ -4,6 +4,11 @@
 #include "tier0/icommandline.h"
 #include "tier1/strtools.h"
 
+#if defined( __linux__ ) && defined( __GLIBC__ ) && ( __GLIBC__ > 2 || ( __GLIBC__ == 2 && __GLIBC_MINOR__ >= 31 ) )
+#define GAMEPADUI_NEEDS_GLIBC_FINITE_MATH_COMPAT 1
+#include <math.h>
+#endif
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -11,6 +16,21 @@
 // SDK2013: not necessary here (Madi)
 #ifdef HL2_RETAIL
 class IVEngineClient* engine = NULL;
+#endif
+
+#if defined( GAMEPADUI_NEEDS_GLIBC_FINITE_MATH_COMPAT )
+extern "C"
+{
+	double __acos_finite( double x ) { return acos( x ); }
+	float __acosf_finite( float x ) { return acosf( x ); }
+	double __asin_finite( double x ) { return asin( x ); }
+	double __atan2_finite( double y, double x ) { return atan2( y, x ); }
+	float __atan2f_finite( float y, float x ) { return atan2f( y, x ); }
+	double __exp_finite( double x ) { return exp( x ); }
+	float __expf_finite( float x ) { return expf( x ); }
+	double __log_finite( double x ) { return log( x ); }
+	double __pow_finite( double x, double y ) { return pow( x, y ); }
+}
 #endif
 
 // Josh: Copied verbatim from basically every other module

@@ -34,7 +34,7 @@ protected:
 
     GamepadUIString m_strFrameTitle;
     GamepadUIButton *m_pFooterButtons[ FooterButtons::MaxFooterButtons ];
-    FooterButtonMask m_ControllerOnlyFooterMask = 0;
+    FooterButtonMask m_ControllerOnlyFooterMask;
 
     GAMEPADUI_PANEL_PROPERTY( Color, m_colTitleColor, "Title", "255 255 255 255", SchemeValueTypes::Color );
 
@@ -45,10 +45,10 @@ protected:
     GAMEPADUI_PANEL_PROPERTY( float, m_flFooterButtonsOffsetY, "FooterButtons.OffsetY", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_flFooterButtonsSpacing, "FooterButtons.Spacing", "0", SchemeValueTypes::ProportionalFloat );
 
-    vgui::HFont m_hTitleFont = vgui::INVALID_FONT;
-    vgui::HFont m_hGenericFont = vgui::INVALID_FONT;
-    int m_nFooterButtonWidth = 0;
-    int m_nFooterButtonHeight = 0;
+    vgui::HFont m_hTitleFont;
+    vgui::HFont m_hGenericFont;
+    int m_nFooterButtonWidth;
+    int m_nFooterButtonHeight;
 };
 
 #endif // GAMEPADUI_FRAME_H

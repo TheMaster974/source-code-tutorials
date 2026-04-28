@@ -11,6 +11,11 @@
 
 GamepadUIFrame::GamepadUIFrame( vgui::Panel *pParent, const char *pszPanelName, bool bShowTaskbarIcon, bool bPopup )
     : BaseClass( pParent, pszPanelName, bShowTaskbarIcon, bPopup )
+    , m_ControllerOnlyFooterMask( 0 )
+    , m_hTitleFont( vgui::INVALID_FONT )
+    , m_hGenericFont( vgui::INVALID_FONT )
+    , m_nFooterButtonWidth( 0 )
+    , m_nFooterButtonHeight( 0 )
 {
     SetConsoleStylePanel( true );
     // bodge to disable the frames title image and display our own
@@ -380,4 +385,3 @@ void GamepadUIFrame::OnKeyCodeReleased( vgui::KeyCode code )
         break;
     }
 }
-

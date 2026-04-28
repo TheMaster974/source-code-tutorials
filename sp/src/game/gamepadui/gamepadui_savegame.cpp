@@ -97,6 +97,7 @@ public:
 
     GamepadUISaveButton( vgui::Panel* pParent, vgui::Panel* pActionSignalTarget, const char *pSchemeFile, const char* pCommand, const SaveGameDescription_t *pSaveGame )
         : BaseClass( pParent, pActionSignalTarget, pSchemeFile, pCommand, pSaveGame->szComment, pSaveGame->szFileTime )
+        , m_bUseTGAImage( false )
         , m_Image()
 		, m_pSaveGame( pSaveGame )
     {
@@ -164,7 +165,7 @@ public:
 	}
 
 private:
-	bool m_bUseTGAImage = false;
+	bool m_bUseTGAImage;
     GamepadUIImage m_Image;
 	const SaveGameDescription_t *m_pSaveGame;
 };

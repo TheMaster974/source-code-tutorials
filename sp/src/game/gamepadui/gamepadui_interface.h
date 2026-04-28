@@ -35,6 +35,8 @@ class GamepadUIBasePanel;
 class GamepadUI : public IGamepadUI
 {
 public:
+    GamepadUI();
+
     static GamepadUI& GetInstance();
 
     void Initialize( CreateInterfaceFn factory ) OVERRIDE;
@@ -82,27 +84,27 @@ public:
 
 private:
 
-    IEngineSound            *m_pEngineSound            = NULL;
-    IEngineVGui             *m_pEngineVGui             = NULL;
-    IGameUIFuncs            *m_pGameUIFuncs            = NULL;
-    IMaterialSystem         *m_pMaterialSystem         = NULL;
-    IMatSystemSurface       *m_pMaterialSystemSurface  = NULL;
-    ISoundEmitterSystemBase *m_pSoundEmitterSystemBase = NULL;
-    IVEngineClient          *m_pEngineClient           = NULL;
-    IVRenderView            *m_pRenderView             = NULL;
+    IEngineSound            *m_pEngineSound;
+    IEngineVGui             *m_pEngineVGui;
+    IGameUIFuncs            *m_pGameUIFuncs;
+    IMaterialSystem         *m_pMaterialSystem;
+    IMatSystemSurface       *m_pMaterialSystemSurface;
+    ISoundEmitterSystemBase *m_pSoundEmitterSystemBase;
+    IVEngineClient          *m_pEngineClient;
+    IVRenderView            *m_pRenderView;
 
-    IGameUI                 *m_pGameUI                 = NULL;
-    IAchievementMgr         *m_pAchievementMgr         = NULL;
+    IGameUI                 *m_pGameUI;
+    IAchievementMgr         *m_pAchievementMgr;
 
-    vgui::AnimationController *m_pAnimationController = NULL;
-    GamepadUIBasePanel *m_pBasePanel = NULL;
+    vgui::AnimationController *m_pAnimationController;
+    GamepadUIBasePanel *m_pBasePanel;
 
     GradientHelper m_GradientHelper;
     CSteamAPIContext m_SteamAPIContext;
 
     GamepadUIMainMenu* GetMainMenu() const;
 	
-    float   m_flScreenRatio = 1.0f;
+    float   m_flScreenRatio;
 
     static GamepadUI *s_pGamepadUI;
 };

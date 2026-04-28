@@ -19,7 +19,9 @@
 
 ConVar gamepadui_background_music_duck( "gamepadui_background_music_duck", "0.35", FCVAR_ARCHIVE );
 
-GamepadUIBasePanel::GamepadUIBasePanel( vgui::VPANEL parent ) : BaseClass( NULL, "GamepadUIBasePanel" )
+GamepadUIBasePanel::GamepadUIBasePanel( vgui::VPANEL parent )
+    : BaseClass( NULL, "GamepadUIBasePanel" )
+    , m_pMainMenu( NULL )
 {
     SetParent( parent );
     MakePopup( false );

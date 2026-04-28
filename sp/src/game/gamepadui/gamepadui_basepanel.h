@@ -26,7 +26,7 @@ public:
     void ReleaseBackgroundMusic();
 
 private:
-    GamepadUIMainMenu *m_pMainMenu = NULL;
+    GamepadUIMainMenu *m_pMainMenu;
 
     int m_nBackgroundMusicGUID;
     bool m_bBackgroundMusicEnabled;
